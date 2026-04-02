@@ -14,7 +14,7 @@ mcp = FastMCP("voice_agent", json_response=True, port=8001)
 BASE_URL = "http://localhost:8000"  # Your Flask server URL
 
 
-# ==================== SEARCH & NAVIGATION ====================
+# search
 
 @mcp.tool()
 def search_businesses(
@@ -27,17 +27,11 @@ def search_businesses(
     """
     Search for businesses and optionally update the UI search bar.
 
-    Args:
-        query: Search term (business name, type, etc.)
-        category: Filter by category (e.g., "Pet Care", "Restaurant", "Cafe")
-        min_rating: Minimum star rating (0-5)
-        max_distance: Maximum distance in miles
-        update_ui: If True, updates the frontend search bar (default: True)
-
-    Returns:
-        List of matching businesses with voice-friendly message
-
-    Example: "Find coffee shops" or "Search for pet stores near me"
+    query: Search term
+    category: Filter by category (e.g., "Pet Care", "Restaurant", "Cafe")
+    min_rating: Minimum star rating (0-5)
+    max_distance: Maximum distance in miles
+    update_ui: If True, updates the frontend search bar (default: True)
     """
     params = {"q": query}
     if category:
@@ -89,14 +83,8 @@ def navigate_to_business(business_id: Optional[int] = None, name: Optional[str] 
     """
     Open the detail page for a specific business by ID or name.
 
-    Args:
-        business_id: ID of the business (use if known)
-        name: Business name or partial name to search for (use if ID unknown)
-
-    Returns:
-        Confirmation with business info or error if not found
-
-    Example: "Show me Pet Haven" or "Open business 5"
+    business_id: ID of the business (use if known)
+    name: Business name or partial name to search for (use if ID unknown)
     """
     if business_id is None and name is None:
         return {"error": True, "message": "Please tell me which business you'd like to see."}
@@ -142,11 +130,7 @@ def navigate_to_business(business_id: Optional[int] = None, name: Optional[str] 
 
 @mcp.tool()
 def go_back_to_list():
-    """
-    Return to the main business listing page.
-
-    Example: "Go back" or "Show me all businesses again"
-    """
+    """Return to the main business listing page."""
     try:
         requests.post(f"{BASE_URL}/agent/navigate", json={"action": "go_back"})
         return {"success": True, "message": "I've taken you back to the business list."}
@@ -154,7 +138,7 @@ def go_back_to_list():
         return {"error": True, "message": "I couldn't go back. Please try again.", "details": str(e)}
 
 
-# ==================== FILTERING & SORTING ====================
+# filters
 
 @mcp.tool()
 def apply_filters_to_page(
@@ -167,14 +151,11 @@ def apply_filters_to_page(
     """
     Apply filters to the business listing. All parameters are optional.
 
-    Args:
-        category: Business category (e.g., "Pet Care", "Restaurant", "Cafe")
-        min_rating: Minimum star rating (0-5)
-        max_distance: Maximum distance in miles (1, 2, 5, 10, 20)
-        favorites_only: Show only favorited businesses
-        has_deals: Show only businesses with active deals
-
-    Example: "Show me 4-star restaurants" or "Filter to my favorites"
+    category: Business category (e.g., "Pet Care", "Restaurant", "Cafe")
+    min_rating: Minimum star rating (0-5)
+    max_distance: Maximum distance in miles (1, 2, 5, 10, 20)
+    favorites_only: Show only favorited businesses
+    has_deals: Show only businesses with active deals
     """
     filters = {}
     filter_descriptions = []
@@ -215,11 +196,7 @@ def apply_filters_to_page(
 
 @mcp.tool()
 def reset_all_filters():
-    """
-    Reset all filters to default values.
-
-    Example: "Clear all filters" or "Show me everything"
-    """
+    """Reset all filters to default values."""
     try:
         requests.post(f"{BASE_URL}/agent/navigate", json={"action": "reset_filters"})
         return {"success": True, "message": "I've cleared all filters. You're seeing all businesses now."}
@@ -232,11 +209,8 @@ def sort_businesses(sort_by: Literal["rating", "distance", "name", "reviews"], o
     """
     Sort the business listing by a specific criteria.
 
-    Args:
-        sort_by: What to sort by - "rating", "distance", "name", or "reviews"
-        order: Sort order - "asc" (ascending) or "desc" (descending, default)
-
-    Example: "Sort by rating" or "Show closest businesses first"
+    sort_by: What to sort by - "rating", "distance", "name", or "reviews"
+    order: Sort order - "asc" (ascending) or "desc" (descending, default)
     """
     try:
         requests.post(f"{BASE_URL}/agent/navigate", json={
@@ -257,15 +231,11 @@ def sort_businesses(sort_by: Literal["rating", "distance", "name", "reviews"], o
         return {"error": True, "message": "I couldn't sort the businesses. Please try again.", "details": str(e)}
 
 
-# ==================== BUSINESS INFO ====================
+# Business Info
 
 @mcp.tool()
 def get_available_categories():
-    """
-    Get all available business categories.
-
-    Example: "What categories are available?" or "What types of businesses can I find?"
-    """
+    """Get all available business categories."""
     try:
         response = requests.get(f"{BASE_URL}/categories")
         if not response.ok:
@@ -286,11 +256,7 @@ def get_available_categories():
 
 @mcp.tool()
 def get_current_businesses():
-    """
-    Get list of businesses currently available.
-
-    Example: "What businesses are available?" or "List all places"
-    """
+    """Get list of businesses currently available."""
     try:
         response = requests.get(f"{BASE_URL}/get_local")
         if not response.ok:
@@ -318,17 +284,14 @@ def get_current_businesses():
         return {"error": True, "message": "I couldn't fetch businesses.", "details": str(e)}
 
 
-# ==================== UI CONTROL ====================
+#UI control
 
 @mcp.tool()
 def toggle_filter_panel(open: bool):
     """
     Open or close the filter sidebar panel.
 
-    Args:
-        open: True to open the panel, False to close it
-
-    Example: "Open the filters" or "Close the filter panel"
+    open: True to open the panel, False to close it
     """
     try:
         requests.post(f"{BASE_URL}/agent/navigate", json={
@@ -346,10 +309,7 @@ def switch_view(view: Literal["businesses", "analytics"]):
     """
     Switch between views.
 
-    Args:
-        view: View to switch to - 'businesses' (main listing) or 'analytics' (dashboard)
-
-    Example: "Show analytics" or "Go back to businesses"
+    view: View to switch to - 'businesses' (main listing) or 'analytics' (dashboard)
     """
     try:
         requests.post(f"{BASE_URL}/agent/navigate", json={
@@ -362,7 +322,7 @@ def switch_view(view: Literal["businesses", "analytics"]):
         return {"error": True, "message": "I couldn't switch views.", "details": str(e)}
 
 
-# ==================== REVIEWS ====================
+# reviews
 
 @mcp.tool()
 def get_reviews(
@@ -374,13 +334,10 @@ def get_reviews(
     """
     Get reviews for a business with optional sorting/filtering.
 
-    Args:
-        business_id: ID of the business
-        sort_by: Sort order - "recent", "highest", or "lowest"
-        filter_rating: Filter by star rating 1-5, or None for all
-        apply_to_ui: If True, also updates the review display in the UI
-
-    Example: "Show me the reviews" or "What are the highest rated reviews?"
+    business_id: ID of the business
+    sort_by: Sort order - "recent", "highest", or "lowest"
+    filter_rating: Filter by star rating 1-5, or None for all
+    apply_to_ui: If True, also updates the review display in the UI
     """
     try:
         response = requests.get(f"{BASE_URL}/get_reviews/{business_id}")
@@ -440,13 +397,10 @@ def add_review(business_id: int, rating: int, comment: str, user_id: int):
     """
     Add a new review to a business.
 
-    Args:
-        business_id: ID of the business to review
-        rating: Star rating from 1-5
-        comment: Review text (10-500 characters)
-        user_id: ID of the user submitting the review
-
-    Example: "I want to leave a 5-star review saying 'excellent service'"
+    business_id: ID of the business to review
+    rating: Star rating from 1-5
+    comment: Review text (10-500 characters)
+    user_id: ID of the user submitting the review
     """
     if not isinstance(rating, int) or rating < 1 or rating > 5:
         return {"error": True, "message": "Please give a rating between 1 and 5 stars."}
@@ -485,17 +439,14 @@ def add_review(business_id: int, rating: int, comment: str, user_id: int):
         return {"error": True, "message": "Something went wrong submitting your review.", "details": str(e)}
 
 
-# ==================== FAVORITES ====================
+#favorites
 
 @mcp.tool()
 def get_user_favorites(user_id: int):
     """
     Get all favorited businesses for a user.
 
-    Args:
-        user_id: ID of the user
-
-    Example: "Show me my favorites" or "What places have I saved?"
+    user_id: ID of the user
     """
     try:
         response = requests.get(f"{BASE_URL}/favorites/{user_id}")
@@ -526,12 +477,9 @@ def toggle_favorite(user_id: int, business_id: int, action: Literal["add", "remo
     """
     Add or remove a business from favorites.
 
-    Args:
-        user_id: ID of the user
-        business_id: ID of the business
-        action: "add" to favorite, "remove" to unfavorite
-
-    Example: "Add this to my favorites" or "Remove this from my favorites"
+    user_id: ID of the user
+    business_id: ID of the business
+    action: "add" to favorite, "remove" to unfavorite
     """
     try:
         if action == "add":
@@ -568,72 +516,55 @@ def toggle_favorite(user_id: int, business_id: int, action: Literal["add", "remo
         return {"error": True, "message": "Something went wrong updating your favorites.", "details": str(e)}
 
 
-# ==================== DEALS ====================
+# deals
 
 @mcp.tool()
-def get_business_deals(business_id: int):
+def get_deals(business_id: Optional[int] = None, category: Optional[str] = None):
     """
-    Get all active deals for a specific business.
+    Get active deals. If business_id given, fetches for that business only. Otherwise fetches all deals, optionally filtered by category.
 
-    Args:
-        business_id: ID of the business
-
-    Example: "Are there any deals here?" or "What discounts are available?"
+    business_id: ID of a specific business, or omit for all deals
+    category: Optional category to filter deals (e.g., "Restaurant", "Cafe")
     """
     try:
-        response = requests.get(f"{BASE_URL}/deals/business/{business_id}")
-        if not response.ok:
-            return {"error": True, "message": "I couldn't get the deals right now."}
+        if business_id is not None:
+            response = requests.get(f"{BASE_URL}/deals/business/{business_id}")
+            if not response.ok:
+                return {"error": True, "message": "I couldn't get the deals right now."}
 
-        deals = response.json()
-        count = len(deals)
+            deals = response.json()
+            count = len(deals)
 
-        if count == 0:
-            message = "There aren't any deals for this business right now."
-        elif count == 1:
-            deal = deals[0]
-            discount = f"{deal.get('discount_percentage')}% off" if deal.get('discount_percentage') else deal.get('title')
-            message = f"There's 1 deal: {discount}. Would you like the code?"
-        else:
-            message = f"There are {count} deals available! Would you like me to go through them?"
-
-        return {"success": True, "deals": deals, "count": count, "message": message}
-    except Exception as e:
-        return {"error": True, "message": "I couldn't fetch the deals.", "details": str(e)}
-
-
-@mcp.tool()
-def get_all_active_deals(category: Optional[str] = None):
-    """
-    Get all active deals across all businesses.
-
-    Args:
-        category: Optional category to filter deals (e.g., "Restaurant", "Cafe")
-
-    Example: "What deals are available?" or "Show me restaurant deals"
-    """
-    try:
-        response = requests.get(f"{BASE_URL}/deals/active")
-        if not response.ok:
-            return {"error": True, "message": "I couldn't get the deals right now."}
-
-        deals = response.json()
-
-        if category:
-            deals = [d for d in deals if d.get('category', '').lower() == category.lower()]
-
-        count = len(deals)
-
-        if count == 0:
-            if category:
-                message = f"There aren't any {category.lower()} deals right now."
+            if count == 0:
+                message = "There aren't any deals for this business right now."
+            elif count == 1:
+                deal = deals[0]
+                discount = f"{deal.get('discount_percentage')}% off" if deal.get('discount_percentage') else deal.get('title')
+                message = f"There's 1 deal: {discount}. Would you like the code?"
             else:
-                message = "There aren't any deals available right now."
-        elif count <= 3:
-            business_names = ", ".join([d.get('business_name', 'Unknown') for d in deals])
-            message = f"Found {count} deals at {business_names}."
+                message = f"There are {count} deals available! Would you like me to go through them?"
         else:
-            message = f"Found {count} deals! The best ones are at {deals[0].get('business_name')} and {deals[1].get('business_name')}."
+            response = requests.get(f"{BASE_URL}/deals/active")
+            if not response.ok:
+                return {"error": True, "message": "I couldn't get the deals right now."}
+
+            deals = response.json()
+
+            if category:
+                deals = [d for d in deals if d.get('category', '').lower() == category.lower()]
+
+            count = len(deals)
+
+            if count == 0:
+                if category:
+                    message = f"There aren't any {category.lower()} deals right now."
+                else:
+                    message = "There aren't any deals available right now."
+            elif count <= 3:
+                business_names = ", ".join([d.get('business_name', 'Unknown') for d in deals])
+                message = f"Found {count} deals at {business_names}."
+            else:
+                message = f"Found {count} deals! The best ones are at {deals[0].get('business_name')} and {deals[1].get('business_name')}."
 
         return {"success": True, "deals": deals, "count": count, "message": message}
     except Exception as e:
@@ -645,10 +576,7 @@ def copy_deal_code(code: str):
     """
     Copy a deal code to the user's clipboard.
 
-    Args:
-        code: The promotional code to copy
-
-    Example: "Copy that coupon code"
+    code: The promotional code to copy
     """
     try:
         requests.post(f"{BASE_URL}/agent/navigate", json={

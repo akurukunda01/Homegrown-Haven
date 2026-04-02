@@ -13,6 +13,7 @@ EDGE_TTS_VOICE = "en-US-AriaNeural"
 ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+HF_TOKEN = os.getenv('HF_TOKEN')
 
 class Assistant(Agent):
     def __init__(self):
@@ -44,12 +45,12 @@ Help users find local businesses, manage favorites, find deals, and navigate the
 async def entrypoint(ctx: agents.JobContext):
     session = AgentSession(
         stt=deepgram.STT(model="nova-2", api_key=DEEPGRAM_API_KEY),
-        llm=openai.LLM(
-            model="local-model",
-            api_key="lm-studio",
-            base_url=LM_STUDIO_URL,
-            timeout=120.0,  # Increase timeout for local LLM (default is ~30s)
+    
+        llm=groq.LLM(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            api_key=GROQ_API_KEY,
         ),
+      
             tts=elevenlabs.TTS(
             api_key=ELEVENLABS_API_KEY,
         ),
