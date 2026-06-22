@@ -1,37 +1,26 @@
 # The Intelligent Voice Assistant
 
-This is the feature I'm most proud of in HomegrownHaven. Instead of clicking
-around, you can just talk to the app — "find coffee shops," "open Pet Haven,"
-"add this to my favorites," "what deals are there?" — and it actually does it,
-then talks back to you. It's a real conversation that also *drives the screen*.
+Instead of clicking around, you can just talk to the web app ie. "find coffee shops," "open Pet Haven,"
+"add this to my favorites," "what deals are there?". The voice assistant can both converse and *drive the screen*.
 
-This folder explains how it all fits together. There are three files:
+This folder explains how it all fits together:
 
-- **overview.md** (this one) — the big picture and a full walk-through of what
-  happens when you speak.
-- **[mcp.md](./mcp.md)** — a closer look at the "tools" the AI uses to take
+- **overview.md** (current file) — full user flow and set up of the agent.
+- **[mcp.md](./mcp.md)** — details the "tools" the assistant uses to take
   action (the MCP server).
-- **[websockets.md](./websockets.md)** — how the screen updates live, in
-  real time, the moment the assistant does something.
+- **[websockets.md](./websockets.md)** — details how the assistant is able to drive the screen from the user's POV
 
-## The short version
+## Basic User Flow 
 
-Under the hood, your request passes through a small team of specialists, each
-doing one job and handing off to the next:
-
-1. Your **microphone** streams audio to the cloud (handled by **LiveKit**).
-2. **Deepgram** listens and turns your speech into text.
-3. A **Groq** language model reads that text and figures out what you *want*.
-4. The model picks one of the app's **tools** and runs it — this is the part
-   that searches, opens a business, applies a filter, and so on.
+1. **microphone** streams audio to the cloud (handled by **LiveKit**).
+2. **Deepgram** listens and turns user speech into text (STT).
+3. A **Groq** language model reads that text and figures out what is the user *want*.
+4. The model picks one of the app's **tools** and runs it to cater to the user.
 5. That tool tells the website to update, and **ElevenLabs** turns the model's
    reply back into a voice you hear.
 
-So there are really two things happening at once: the assistant is *answering*
-you out loud, and it's also *operating the interface* for you. That second part
-is what makes it more than a chatbot.
 
-## What's doing the work
+## Tech Stack
 
 | Job | What I used | Lives in |
 |---|---|---|
@@ -43,13 +32,12 @@ is what makes it more than a chatbot.
 | The tools the AI can run | **FastMCP** | `voice_mcp/main.py` |
 | Pushing live updates to the screen | **Flask-Sock** (WebSocket) | `app.py`, `page.jsx` |
 
-## Following one request end to end
+## Example User Flow
 
-Say you press the assistant button and say **"Find coffee shops."** Here's the
-whole trip:
+Here is an example user flow communicating with the agent:
 
 ```
-You: "Find coffee shops"
+User: "Find coffee shops"
   → LiveKit carries your audio to the agent
   → Deepgram writes it down: "find coffee shops"
   → Groq reads it and decides: this is a search, call the search tool
@@ -62,17 +50,15 @@ You: "Find coffee shops"
      narrow it down?"
 ```
 
-Two details worth calling out, because they're what make it feel polished:
-
 - **The model is told to behave like a person, not a machine.** In
   `voice_chat.py` the assistant's instructions say things like "keep responses
   to 1–2 sentences," "never read out more than 3 items," and "don't mention tool
   names." That's why it summarizes instead of reading a list of 8 businesses.
 - **Every tool writes its own spoken reply.** Each tool returns a ready-made
   `message` (e.g. *"I've opened Pet Haven for you."*) so the voice stays natural
-  and consistent. The model just speaks that line.
+  and consistent. 
 
-## Running it (three pieces)
+## Running the full assistant
 
 The voice feature is three programs running together:
 
@@ -81,5 +67,5 @@ The voice feature is three programs running together:
 3. `python voice_chat.py` — the LiveKit voice agent
 
 Once all three are up and the browser joins the audio room, you can start
-talking. For the details of the last two pieces, see **mcp.md** and
+talking. For more details of the last two pieces, see **mcp.md** and
 **websockets.md**.
