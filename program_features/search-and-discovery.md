@@ -1,9 +1,5 @@
 # Search, Filtering & Distance
 
-The core of HomegrownHaven is finding local businesses. Users can search by name,
-narrow by category and rating, and — when they share their location — see how far
-away each business is and have the list sorted nearest-first.
-
 - **Search** — type a name; matches are case-insensitive and partial ("coff"
   finds "Coffee House").
 - **Filter** — by category, by minimum rating, and by maximum distance.
