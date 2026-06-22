@@ -3,20 +3,16 @@
 
 HomegrownHaven stores data in three layers:
 
-1. **The database (long-term memory)** — a PostgreSQL database keeps everything
+1. **The database ** — a PostgreSQL database keeps everything
    permanent: businesses, users, reviews, favorites, and deals. This survives
    even after the app is closed.
-2. **The backend (in-transit data)** — when the Flask server answers a request,
+2. **The backend** — when the Flask server answers a request,
    it pulls rows from the database into Python **lists** and **dictionaries**,
    shapes them, and sends them out.
-3. **The frontend (live screen data)** — the React app holds what you currently
+3. **The frontend)** — the React app holds what you currently
    see on screen in **state variables** (arrays and objects). When this data
    changes, the screen updates automatically.
 
-Think of it as: **database = filing cabinet**, **backend = the clerk carrying
-folders**, **frontend = the papers laid out on your desk**.
-
----
 
 ## Technical details
 
@@ -68,11 +64,7 @@ export const FIELD_DEFS = [
 ];
 ```
 
-### Why this meets the bar
-- **Arrays and lists** are used where appropriate (business/deal/favorite
-  collections, `FIELD_DEFS`).
-- **Each variable has one clear job** and the **correct data type** (numbers for
-  ratings, arrays for lists, objects for grouped settings).
-- **Variable scope makes sense**: database access is scoped to a request,
+
+- **Variable scope**: database access is scoped to a request,
   React state is scoped to the component that owns it, and helper values are
   scoped to their function.
