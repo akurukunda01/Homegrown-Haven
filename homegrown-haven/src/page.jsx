@@ -6,6 +6,9 @@ import SearchBar from "./components/search-bar"
 import BusinessFilter from "./components/business-filter"
 import AnalyticsDashboard from "./components/analytics-dashboard"
 import AboutPage from "./components/about-page"
+import ReportConfig from "./components/report-config"
+import { FIELD_DEFS, DEFAULT_REPORT_CONFIG } from "./components/report-fields"
+import { buildQueryString } from "./utils/validators"
 import { useAuth0 } from "@auth0/auth0-react"
 import {
   RoomAudioRenderer,
@@ -217,6 +220,8 @@ export default function Home({ currentUser }) {
   const [favorites, setFavorites] = useState([])
   const [allDeals, setAllDeals] = useState([])
   const [filterOpen, setFilterOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportConfig, setReportConfig] = useState(DEFAULT_REPORT_CONFIG);
   const [liveKitRoom, setLiveKitRoom] = useState(null);
   const [isInRoom, setIsInRoom] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -507,7 +512,9 @@ export default function Home({ currentUser }) {
   setLoading(true)
   try {
     if (filters.favoritesOnly && currentUser?.id) {
-      const response = await fetch(`http://localhost:8000/favorites/${currentUser.id}`);
+      const response = await fetch(`http://localhost:8000/favorites/${currentUser.id}`, {
+        headers: { 'X-Auth0-User-ID': currentUser.auth0_id }
+      });
       let data = await response.json();
 
       if (filters.hasDeals) {
@@ -515,14 +522,14 @@ export default function Home({ currentUser }) {
       }
       setBusinesses(data);
     } else {
-      // Add lat/lng to URL
-      let url = `http://localhost:8000/get_local?lat=${userLocation.lat}&lng=${userLocation.lng}&`
-      const params = []
-      if (filters.category !== 'all') params.push(`category=${filters.category}`)
-      if (filters.minRating > 0) params.push(`min_rating=${filters.minRating}`)
-      if (filters.maxDistance !== 'all') params.push(`max_distance=${filters.maxDistance}`)
-      url += params.join('&')
-      const response = await fetch(url)
+      const query = buildQueryString({
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        category: filters.category !== 'all' ? filters.category : null,
+        min_rating: filters.minRating > 0 ? filters.minRating : null,
+        max_distance: filters.maxDistance !== 'all' ? filters.maxDistance : null,
+      })
+      const response = await fetch(`http://localhost:8000/get_local?${query}`)
       let data = await response.json()
       if (filters.hasDeals) data = data.filter(b => allDeals.some(d => d.business_id === b.id))
       setBusinesses(data)
@@ -537,7 +544,9 @@ export default function Home({ currentUser }) {
 
   const fetchFavorites = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/favorites/${currentUser.id}`);
+      const response = await fetch(`http://localhost:8000/favorites/${currentUser.id}`, {
+        headers: { 'X-Auth0-User-ID': currentUser.auth0_id }
+      });
       const data = await response.json();
       setFavorites(data);
     } catch (error) {
@@ -561,11 +570,17 @@ export default function Home({ currentUser }) {
     const isFavorited = favorites.some(fav => fav.id === businessId);
     try {
       if (isFavorited) {
-        await fetch(`http://localhost:8000/favorites/${currentUser.id}/${businessId}`, { method: 'DELETE' });
+        await fetch(`http://localhost:8000/favorites/${currentUser.id}/${businessId}`, {
+          method: 'DELETE',
+          headers: { 'X-Auth0-User-ID': currentUser.auth0_id }
+        });
       } else {
         await fetch('http://localhost:8000/favorites', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth0-User-ID': currentUser.auth0_id
+          },
           body: JSON.stringify({ user_id: currentUser.id, business_id: businessId })
         });
       }
@@ -583,12 +598,15 @@ export default function Home({ currentUser }) {
   }
   setLoading(true)
   try {
-    // Add lat/lng to search URL
-    let url = `http://localhost:8000/search_local?q=${searchQuery}&lat=${userLocation.lat}&lng=${userLocation.lng}`
-    if (filters.category !== 'all') url += `&category=${filters.category}`
-    if (filters.minRating > 0) url += `&min_rating=${filters.minRating}`
-    if (filters.maxDistance !== 'all') url += `&max_distance=${filters.maxDistance}`
-    const response = await fetch(url)
+    const query = buildQueryString({
+      q: searchQuery.trim(),
+      lat: userLocation.lat,
+      lng: userLocation.lng,
+      category: filters.category !== 'all' ? filters.category : null,
+      min_rating: filters.minRating > 0 ? filters.minRating : null,
+      max_distance: filters.maxDistance !== 'all' ? filters.maxDistance : null,
+    })
+    const response = await fetch(`http://localhost:8000/search_local?${query}`)
     let data = await response.json()
     if (filters.hasDeals) data = data.filter(b => allDeals.some(d => d.business_id === b.id))
     setBusinesses(data)
@@ -612,38 +630,95 @@ export default function Home({ currentUser }) {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  const exportToCSV = () => {
-    // Prepare CSV data
-    const headers = ['Name', 'Category', 'Rating', 'Reviews', 'Distance', 'Address', 'Phone']
-    const rows = businesses.map(b => [
-      b.name,
-      b.category,
-      b.rating || 'N/A',
-      b.review_count || 0,
-      b.distance || 'N/A',
-      b.address || 'N/A',
-      b.phone || 'N/A'
-    ])
+  // Row counts per scope, for the report panel's live labels.
+  const reportCounts = {
+    current: businesses.length,
+    all: allBusinesses.length,
+    favorites: favorites.length,
+    deals: allBusinesses.filter(b => allDeals.some(d => d.business_id === b.id)).length,
+  }
 
-    // Create CSV content
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
-
-    // Download file
-    const blob = new Blob([csvContent], { type: 'text/csv' })
+  const triggerDownload = (content, type, extension) => {
+    const blob = new Blob([content], { type })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `businesses_${new Date().toISOString().split('T')[0]}.csv`
+    link.download = `businesses_${new Date().toISOString().split('T')[0]}.${extension}`
     link.click()
     window.URL.revokeObjectURL(url)
   }
 
+  // Guard against CSV injection and escape embedded quotes/newlines.
+  const csvCell = (value) => {
+    let str = String(value ?? '')
+    if (/^[=+\-@]/.test(str)) str = `'${str}`
+    return `"${str.replace(/"/g, '""')}"`
+  }
+
+  const generateReport = () => {
+    const config = reportConfig
+
+    // 1. Resolve rows by scope (all source arrays already exist in state).
+    const scopeRows = {
+      current: businesses,
+      all: allBusinesses,
+      favorites,
+      deals: allBusinesses.filter(b => allDeals.some(d => d.business_id === b.id)),
+    }
+    const rows = [...(scopeRows[config.scope] || [])]
+
+    // 2. Sort.
+    const dir = config.sortOrder === 'asc' ? 1 : -1
+    rows.sort((a, b) => {
+      const av = a[config.sortBy]
+      const bv = b[config.sortBy]
+      if (config.sortBy === 'name') return String(av || '').localeCompare(String(bv || '')) * dir
+      return ((Number(av) || 0) - (Number(bv) || 0)) * dir
+    })
+
+    // 3. Project selected columns via the shared field map.
+    const fields = FIELD_DEFS.filter(f => config.columns[f.key])
+    if (fields.length === 0 || rows.length === 0) return
+
+    // 4. Emit by format.
+    if (config.format === 'json') {
+      const data = rows.map(r => Object.fromEntries(fields.map(f => [f.key, f.accessor(r)])))
+      triggerDownload(JSON.stringify(data, null, 2), 'application/json', 'json')
+    } else if (config.format === 'print') {
+      const head = fields.map(f => `<th>${f.label}</th>`).join('')
+      const body = rows.map(r =>
+        `<tr>${fields.map(f => `<td>${String(f.accessor(r) ?? '')}</td>`).join('')}</tr>`
+      ).join('')
+      const win = window.open('', '_blank')
+      if (!win) return
+      win.document.write(`<!DOCTYPE html><html><head><title>Business Report</title>
+        <style>
+          body{font-family:system-ui,sans-serif;padding:24px;color:#111}
+          h1{color:#15803d}
+          table{border-collapse:collapse;width:100%;font-size:13px}
+          th,td{border:1px solid #ddd;padding:8px;text-align:left}
+          th{background:#15803d;color:#fff}
+          tr:nth-child(even){background:#f6f6f6}
+        </style></head><body>
+        <h1>HomegrownHaven Business Report</h1>
+        <p>${rows.length} businesses · ${new Date().toLocaleDateString()}</p>
+        <table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+        </body></html>`)
+      win.document.close()
+      win.focus()
+      win.print()
+    } else {
+      const header = fields.map(f => csvCell(f.label)).join(',')
+      const lines = rows.map(r => fields.map(f => csvCell(f.accessor(r))).join(','))
+      triggerDownload([header, ...lines].join('\n'), 'text/csv', 'csv')
+    }
+
+    setReportOpen(false)
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-br from-background via-background to-secondary/10">
-  <div className={`transition-all duration-300 ${filterOpen ? 'mr-60' : 'mr-0'}`}>
+  <div className={`transition-all duration-300 ${filterOpen || reportOpen ? 'mr-60' : 'mr-0'}`}>
     <Header
       view={view}
       onHomeClick={() => setView('businesses')}
@@ -742,7 +817,7 @@ export default function Home({ currentUser }) {
           <div className="flex justify-center items-center gap-5 mb-8">
             <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} filters={filters} />
             <button
-              onClick={() => setFilterOpen(!filterOpen)}
+              onClick={() => { setReportOpen(false); setFilterOpen(!filterOpen); }}
               aria-label="Open filters"
               className="group relative bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-3 rounded-xl shadow-lg hover:shadow-green-500/50 transition-all duration-300 flex items-center hover:scale-105 "
             >
@@ -752,8 +827,8 @@ export default function Home({ currentUser }) {
               </span>
             </button>
             <button
-              onClick={exportToCSV}
-              aria-label={`Export ${businesses.length} businesses to CSV`}
+              onClick={() => { setFilterOpen(false); setReportOpen(true); }}
+              aria-label="Customize and export business report"
               className="group relative bg-white border-2 border-green-700 text-green-700 px-3 py-3 rounded-xl shadow-lg hover:shadow-green-500/50 transition-all duration-300 flex items-center hover:scale-105"
             >
               <Download className="w-5 h-5 mx-2" />
@@ -817,6 +892,15 @@ export default function Home({ currentUser }) {
     isOpen={filterOpen}
     onClose={() => setFilterOpen(false)}
     filters={filters}
+  />
+
+  <ReportConfig
+    isOpen={reportOpen}
+    onClose={() => setReportOpen(false)}
+    config={reportConfig}
+    onConfigChange={setReportConfig}
+    onGenerate={generateReport}
+    counts={reportCounts}
   />
 
   </div>

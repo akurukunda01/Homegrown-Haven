@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Heart, MapPin, Phone, Star, Navigation, MessageCircle, Plus, Trash2, Tag, Copy, Check, X, Filter, TrendingUp } from "lucide-react";
+import { validateReview } from "../utils/validators";
 
 export default function BusinessDetail({ business, user, onBack, onAskAI, isFavorited, onToggleFavorite }) {
   const [reviews, setReviews] = useState([]);
@@ -87,28 +88,11 @@ export default function BusinessDetail({ business, user, onBack, onAskAI, isFavo
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const validateReview = () => {
-    const errors = {};
-
-    if (!newReview.rating || newReview.rating < 1 || newReview.rating > 5) {
-      errors.rating = 'Please select a rating between 1 and 5 stars';
-    }
-
-    const comment = newReview.comment.trim();
-    if (!comment) {
-      errors.comment = 'Comment is required';
-    } else if (comment.length < 10) {
-      errors.comment = 'Comment must be at least 10 characters';
-    } else if (comment.length > 500) {
-      errors.comment = 'Comment must not exceed 500 characters';
-    }
-
-    return errors;
-  };
+  const isReviewValid = Object.keys(validateReview(newReview)).length === 0;
 
   const handleSubmitReview = async () => {
     // Validate first
-    const errors = validateReview();
+    const errors = validateReview(newReview);
     setFormErrors(errors);
 
     if (Object.keys(errors).length > 0) {
@@ -592,7 +576,8 @@ export default function BusinessDetail({ business, user, onBack, onAskAI, isFavo
                     </button>
                     <button
                       onClick={handleSubmitReview}
-                      className="px-4 py-2 bg-green-700 text-white rounded-lg bg-gradient-to-r hover:scale-105 from-green-600 to-green-700 transition-colors"
+                      disabled={!isReviewValid}
+                      className="px-4 py-2 bg-green-700 text-white rounded-lg bg-gradient-to-r hover:scale-105 from-green-600 to-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       Submit Review
                     </button>

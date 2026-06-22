@@ -1,0 +1,77 @@
+VOICE AGENT LLM CONFIGURATION
+==============================
+File: voice_chat.py
+Last updated: 2026-04-02
+
+CURRENT SETUP: Groq — Llama 4 Scout
+-------------------------------------
+  Model:      meta-llama/llama-4-scout-17b-16e-instruct
+  Provider:   Groq (LPU hardware)
+  API Key:    GROQ_API_KEY (set in .env)
+  Speed:      ~0.2-0.3s TTFT
+  Free Tier:  30,000 tokens/min, 500,000 tokens/day
+
+Note: HuggingFace free tier was tried first but has a monthly credit cap
+that depleted quickly under voice agent usage (402 error).
+
+
+HOW TO ROLL BACK TO LM STUDIO
+------------------------------
+In voice_chat.py, find the LLM CONFIGURATION block and swap the comments:
+
+  1. Comment out the HuggingFace llm=openai.LLM(...) block
+  2. Uncomment the ROLLBACK block below it
+
+LM Studio must be running locally at http://localhost:1234 with a model loaded.
+
+
+OTHER AVAILABLE OPTIONS (for future switching)
+----------------------------------------------
+All options use the openai.LLM plugin — only model/api_key/base_url change.
+
+Option A — Groq (fastest, already imported):
+  llm=groq.LLM(
+      model="llama-3.3-70b-versatile",
+      api_key=GROQ_API_KEY,
+  )
+  Speed: ~0.2-0.3s TTFT. Requires GROQ_API_KEY in .env (already set).
+
+Option B — OpenAI gpt-4o-mini:
+  llm=openai.LLM(
+      model="gpt-4o-mini",
+      api_key=OPENAI_API_KEY,
+  )
+  Speed: ~0.3-0.5s TTFT. Requires OPENAI_API_KEY in .env (already set).
+
+Option C — HuggingFace (current), smaller/faster model:
+  Change model to: "meta-llama/Llama-3.1-8B-Instruct"
+  Same base_url and HF_TOKEN. Faster but less capable.
+
+
+PIPELINE OVERVIEW
+-----------------
+  STT:  Deepgram nova-2     (cloud, ~300ms)
+  LLM:  HuggingFace router  (cloud, ~500-1000ms TTFT)  ← changed
+  TTS:  ElevenLabs          (cloud, ~300ms)
+  VAD:  Silero              (local)
+  MCP:  localhost:8001       (local FastMCP server)
+
+
+  # OPTION: Groq llama-3.3-70b (12K TPM / 1K RPD free tier, higher quality)
+        # llm=groq.LLM(
+        #     model="llama-3.3-70b-versatile",
+        #     api_key=GROQ_API_KEY,
+        # ),
+        # OPTION: HuggingFace Inference Providers (free tier has monthly credit limit)
+        # llm=openai.LLM(
+        #     model="meta-llama/Llama-3.3-70B-Instruct",
+        #     api_key=HF_TOKEN,
+        #     base_url="https://router.huggingface.co/v1",
+        # ),
+        # ROLLBACK: To revert to LM Studio, uncomment below
+        # llm=openai.LLM(
+        #     model="local-model",
+        #     api_key="lm-studio",
+        #     base_url=LM_STUDIO_URL,
+        #     timeout=120.0,
+        # ),

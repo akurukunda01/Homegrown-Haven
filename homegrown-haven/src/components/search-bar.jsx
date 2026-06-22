@@ -1,4 +1,5 @@
 import { Search } from "lucide-react"
+import { SEARCH_MAX } from "../utils/validators"
 
 
 
@@ -9,6 +10,7 @@ export default function SearchBar({ searchQuery, setSearchQuery, filters }) {
         <Search className="absolute  text-gray-600 left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         <input
           type="text"
+          maxLength={SEARCH_MAX}
           placeholder="Search businesses, categories, or cuisines..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

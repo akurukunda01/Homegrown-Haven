@@ -9,6 +9,15 @@ import math
 import uuid
 from dotenv import load_dotenv
 from livekit import api
+from validation import (
+    validate,
+    current_user_id,
+    ReviewCreate,
+    ReviewUpdate,
+    FavoriteCreate,
+    AuthSyncUser,
+    BusinessQuery,
+)
 
 # Load environment variables
 load_dotenv()
@@ -19,6 +28,21 @@ app = Flask(__name__)
 CORS(app)
 
 sock = Sock(app)
+
+
+@app.errorhandler(404)
+def handle_404(error):
+    return jsonify({'error': 'Not found'}), 404
+
+
+@app.errorhandler(Exception)
+def handle_uncaught(error):
+    """Last-resort net so unhandled errors return clean JSON, not an HTML 500."""
+    from werkzeug.exceptions import HTTPException
+    if isinstance(error, HTTPException):
+        return jsonify({'error': error.description}), error.code
+    print(f"Unhandled error: {error}")
+    return jsonify({'error': 'Internal server error'}), 500
 
 # Store connected WebSocket clients
 connected_clients = set()
@@ -114,18 +138,17 @@ def close_db_connection(error):
 def sync_auth0_user():
     """Sync Auth0 user with local database"""
     try:
-        auth0_user = request.json
-        
-        auth0_id = auth0_user.get('sub')
-        email = auth0_user.get('email')
-        user_name = auth0_user.get('nickname') or auth0_user.get('name') or email.split('@')[0]
-        first_name = auth0_user.get('given_name', '')
-        last_name = auth0_user.get('family_name', '')
-        avatar_url = auth0_user.get('picture', '')
-        
-        if not auth0_id or not email:
-            return jsonify({'error': 'Missing required user information'}), 400
-        
+        data, errors = validate(AuthSyncUser, request.json)
+        if errors:
+            return jsonify({'errors': errors}), 400
+
+        auth0_id = data.sub
+        email = data.email
+        user_name = data.nickname or data.name or email.split('@')[0]
+        first_name = data.given_name or ''
+        last_name = data.family_name or ''
+        avatar_url = data.picture or ''
+
         conn, cursor = get_db()
         
         cursor.execute('SELECT * FROM users WHERE auth0_id = %s', (auth0_id,))
@@ -137,7 +160,7 @@ def sync_auth0_user():
                 SET email = %s, user_name = %s, first_name = %s, last_name = %s, 
                     avatar_url = %s, updated_at = CURRENT_TIMESTAMP
                 WHERE auth0_id = %s
-                RETURNING id, user_name, email, first_name, last_name, avatar_url
+                RETURNING id, user_name, email, first_name, last_name, avatar_url, auth0_id
             ''', (email, user_name, first_name, last_name, avatar_url, auth0_id))
             
             updated_user = cursor.fetchone()
@@ -149,7 +172,7 @@ def sync_auth0_user():
             cursor.execute('''
                 INSERT INTO users (user_name, email, auth0_id, first_name, last_name, avatar_url)
                 VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id, user_name, email, first_name, last_name, avatar_url
+                RETURNING id, user_name, email, first_name, last_name, avatar_url, auth0_id
             ''', (user_name, email, auth0_id, first_name, last_name, avatar_url))
             
             new_user = cursor.fetchone()
@@ -186,12 +209,17 @@ def get_current_user():
 
 @app.route('/get_local', methods=['GET'])
 def get_businesses():
-    category = request.args.get('category')
-    min_rating = request.args.get('min_rating', type=float)
-    max_distance = request.args.get('max_distance')
-    user_lat = request.args.get('lat', type=float)
-    user_lng = request.args.get('lng', type=float)
-    
+    args = _clean_query_args(request.args)
+    params_obj, errors = validate(BusinessQuery, args)
+    if errors:
+        return jsonify({'errors': errors}), 400
+
+    category = params_obj.category
+    min_rating = params_obj.min_rating
+    max_distance = params_obj.max_distance
+    user_lat = params_obj.lat
+    user_lng = params_obj.lng
+
     conn, cursor = get_db()
     
     sql = "SELECT * FROM businesses WHERE latitude IS NOT NULL AND longitude IS NOT NULL"
@@ -222,19 +250,30 @@ def get_businesses():
                 business['distance_value'] = 999  # Put businesses without coords at end
         
         # Filter by max distance if provided
-        if max_distance and max_distance != 'all':
-            businesses = [b for b in businesses if b.get('distance_value', 999) <= float(max_distance)]
-        
+        if max_distance is not None:
+            businesses = [b for b in businesses if b.get('distance_value', 999) <= max_distance]
+
         # Sort by distance
         businesses = sorted(businesses, key=lambda x: x.get('distance_value', 999))
     else:
         # No user location, sort by rating
         businesses = sorted(businesses, key=lambda x: x.get('rating', 0), reverse=True)
-    
+
     cursor.close()
     conn.close()
-    
+
     return jsonify(businesses), 200
+
+
+def _clean_query_args(args):
+    """Drop 'all'/'' sentinels for numeric query params so the optional
+    BusinessQuery fields stay None instead of failing float parsing."""
+    cleaned = args.to_dict()
+    for key in ('min_rating', 'max_distance', 'lat', 'lng'):
+        if cleaned.get(key) in ('', 'all'):
+            cleaned.pop(key, None)
+    return cleaned
+
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculate distance in miles using Haversine formula"""
@@ -254,22 +293,17 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 @app.route('/search_local', methods=['GET'])
 def search_businesses():
-    query = request.args.get('q', '')
-    category = request.args.get('category')
-    min_rating = request.args.get('min_rating', type=float)
-    max_distance = request.args.get('max_distance')
-    user_lat = request.args.get('lat', type=float)
-    user_lng = request.args.get('lng', type=float)
+    args = _clean_query_args(request.args)
+    params_obj, errors = validate(BusinessQuery, args)
+    if errors:
+        return jsonify({'errors': errors}), 400
 
-    # VALIDATE COORDINATES
-    if user_lat is not None and (user_lat < -90 or user_lat > 90):
-        return jsonify({'error': 'Invalid latitude - must be between -90 and 90'}), 400
-    if user_lng is not None and (user_lng < -180 or user_lng > 180):
-        return jsonify({'error': 'Invalid longitude - must be between -180 and 180'}), 400
-
-    # VALIDATE RATING
-    if min_rating is not None and (min_rating < 0 or min_rating > 5):
-        return jsonify({'error': 'Rating must be between 0 and 5'}), 400
+    query = params_obj.q or ''
+    category = params_obj.category
+    min_rating = params_obj.min_rating
+    max_distance = params_obj.max_distance
+    user_lat = params_obj.lat
+    user_lng = params_obj.lng
 
     conn, cursor = get_db()
     
@@ -301,9 +335,9 @@ def search_businesses():
                 business['distance_value'] = 999
         
         # Filter by max distance if provided
-        if max_distance and max_distance != 'all':
-            businesses = [b for b in businesses if b.get('distance_value', 999) <= float(max_distance)]
-        
+        if max_distance is not None:
+            businesses = [b for b in businesses if b.get('distance_value', 999) <= max_distance]
+
         # Sort by distance
         businesses = sorted(businesses, key=lambda x: x.get('distance_value', 999))
     else:
@@ -354,72 +388,27 @@ def get_rating(id):
     conn.close()
     return jsonify(rating), 200
 
-# Validation function for review data
-def validate_review_data(data, cursor):
-    """Validate review submission data"""
-    errors = []
-
-    # Required fields
-    if not data.get('business'):
-        errors.append('Business ID is required')
-    if not data.get('rating'):
-        errors.append('Rating is required')
-    if not data.get('comment'):
-        errors.append('Comment is required')
-
-    # Semantic validation
-    if data.get('rating'):
-        try:
-            rating = int(data['rating'])
-            if rating < 1 or rating > 5:
-                errors.append('Rating must be between 1 and 5')
-        except (ValueError, TypeError):
-            errors.append('Rating must be a valid number')
-
-    if data.get('comment'):
-        comment = data['comment'].strip()
-        if len(comment) < 10:
-            errors.append('Comment must be at least 10 characters')
-        if len(comment) > 500:
-            errors.append('Comment must not exceed 500 characters')
-
-    # Business exists
-    if data.get('business'):
-        cursor.execute('SELECT id FROM businesses WHERE id = %s', (data['business'],))
-        if not cursor.fetchone():
-            errors.append('Business does not exist')
-
-    return errors
-
 # Create review
 @app.route('/add_reviews', methods=['POST'])
 def create_review():
-    data = request.json
-    conn, cursor = get_db()
-
-    # VALIDATE DATA
-    errors = validate_review_data(data, cursor)
+    # Syntactic validation
+    review, errors = validate(ReviewCreate, request.json)
     if errors:
-        cursor.close()
-        conn.close()
         return jsonify({'errors': errors}), 400
 
-    # Get authenticated user (with fallback to keep existing functionality)
-    auth0_id = request.headers.get('X-Auth0-User-ID')
-    user_id = 1  # Default fallback
+    conn, cursor = get_db()
 
-    if auth0_id:
-        # Try to get actual user from Auth0 ID
-        cursor.execute('SELECT id FROM users WHERE auth0_id = %s', (auth0_id,))
-        user = cursor.fetchone()
-        if user:
-            user_id = user['id']
-        # If user not found, falls back to user_id=1
+    # Semantic validation: business must exist
+    cursor.execute('SELECT id FROM businesses WHERE id = %s', (review.business,))
+    if not cursor.fetchone():
+        return jsonify({'errors': ['business: does not exist']}), 400
 
-    # Use user_id (either actual user or fallback)
+    # Resolve authenticated user (fallback to user_id=1 to keep existing behavior)
+    user_id = current_user_id(cursor) or 1
+
     cursor.execute(
         'INSERT INTO reviews (user_id, business_id, rating, comment) VALUES (%s, %s, %s, %s) RETURNING *',
-        (user_id, data['business'], data['rating'], data['comment'])
+        (user_id, review.business, review.rating, review.comment)
     )
     review = cursor.fetchone()
     conn.commit()
@@ -430,11 +419,25 @@ def create_review():
 # Update review
 @app.route('/update_reviews/<int:id>', methods=['PUT'])
 def update_review(id):
-    data = request.json
+    # Syntactic validation
+    data, errors = validate(ReviewUpdate, request.json)
+    if errors:
+        return jsonify({'errors': errors}), 400
+
     conn, cursor = get_db()
+
+    # Semantic validation: review must exist, and caller must own it
+    cursor.execute('SELECT user_id FROM reviews WHERE id = %s', (id,))
+    existing = cursor.fetchone()
+    if not existing:
+        return jsonify({'error': 'Review not found'}), 404
+    user_id = current_user_id(cursor)
+    if user_id is None or existing['user_id'] != user_id:
+        return jsonify({'error': 'Not authorized to modify this review'}), 403
+
     cursor.execute(
-        'UPDATE reviews SET product_name=%s, rating=%s, comment=%s WHERE id=%s RETURNING *',
-        (data['product_name'], data['rating'], data['comment'], id)
+        'UPDATE reviews SET rating=%s, comment=%s WHERE id=%s RETURNING *',
+        (data.rating, data.comment, id)
     )
     review = cursor.fetchone()
     conn.commit()
@@ -445,7 +448,17 @@ def update_review(id):
 # Delete review
 @app.route('/delete_reviews/<int:id>', methods=['DELETE'])
 def delete_review(id):
-    conn, cursor= get_db()
+    conn, cursor = get_db()
+
+    # Semantic validation: review must exist, and caller must own it
+    cursor.execute('SELECT user_id FROM reviews WHERE id = %s', (id,))
+    existing = cursor.fetchone()
+    if not existing:
+        return jsonify({'error': 'Review not found'}), 404
+    user_id = current_user_id(cursor)
+    if user_id is None or existing['user_id'] != user_id:
+        return jsonify({'error': 'Not authorized to delete this review'}), 403
+
     cursor.execute('DELETE FROM reviews WHERE id=%s', (id,))
     conn.commit()
     cursor.close()
@@ -502,6 +515,8 @@ def get_categories():
 def get_favorites(user_id):
     """Get all favorites for a user"""
     conn, cursor = get_db()
+    if current_user_id(cursor) != user_id:
+        return jsonify({'error': 'Not authorized to view these favorites'}), 403
     cursor.execute('''
         SELECT b.* FROM businesses b
         JOIN favorites f ON b.id = f.business_id
@@ -517,18 +532,25 @@ def get_favorites(user_id):
 @app.route('/favorites', methods=['POST'])
 def add_favorite():
     """Add a business to favorites"""
-    data = request.json
-    user_id = data.get('user_id')
-    business_id = data.get('business_id')
-    
-    if not user_id or not business_id:
-        return jsonify({'error': 'user_id and business_id required'}), 400
-    
+    fav, errors = validate(FavoriteCreate, request.json)
+    if errors:
+        return jsonify({'errors': errors}), 400
+
     try:
         conn, cursor = get_db()
+
+        # Authorization: caller may only modify their own favorites
+        if current_user_id(cursor) != fav.user_id:
+            return jsonify({'error': 'Not authorized to modify these favorites'}), 403
+
+        # Semantic validation: business must exist
+        cursor.execute('SELECT id FROM businesses WHERE id = %s', (fav.business_id,))
+        if not cursor.fetchone():
+            return jsonify({'errors': ['business_id: does not exist']}), 400
+
         cursor.execute(
             'INSERT INTO favorites (user_id, business_id) VALUES (%s, %s) RETURNING *',
-            (user_id, business_id)
+            (fav.user_id, fav.business_id)
         )
         favorite = cursor.fetchone()
         
@@ -550,6 +572,8 @@ def add_favorite():
 def remove_favorite(user_id, business_id):
     """Remove a business from favorites"""
     conn, cursor = get_db()
+    if current_user_id(cursor) != user_id:
+        return jsonify({'error': 'Not authorized to modify these favorites'}), 403
     cursor.execute(
         'DELETE FROM favorites WHERE user_id = %s AND business_id = %s RETURNING *',
         (user_id, business_id)
@@ -571,6 +595,8 @@ def remove_favorite(user_id, business_id):
 def check_favorite(user_id, business_id):
     """Check if a business is favorited by user"""
     conn, cursor = get_db()
+    if current_user_id(cursor) != user_id:
+        return jsonify({'error': 'Not authorized'}), 403
     cursor.execute(
         'SELECT EXISTS(SELECT 1 FROM favorites WHERE user_id = %s AND business_id = %s)',
         (user_id, business_id)
