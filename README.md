@@ -28,7 +28,7 @@ HomegrownHaven helps users discover and support local businesses in their commun
 | Backend | Python, Flask |
 | Database | PostgreSQL |
 | Authentication | Auth0 |
-| Voice AI | LiveKit Agents, Deepgram (STT), ElevenLabs (TTS), OpenAI/LM Studio (LLM) |
+| Voice AI | LiveKit Agents, Deepgram (STT), ElevenLabs (TTS), Groq (LLM) |
 
 ---
 
@@ -40,7 +40,7 @@ HomegrownHaven helps users discover and support local businesses in their commun
 - **Python** 3.10+
 - **PostgreSQL** 16+
 - **Auth0 Account** (free tier available)
-- **API Keys** for: Deepgram, ElevenLabs, OpenAI (or LM Studio for local LLM)
+- **API Keys** for: Deepgram, ElevenLabs, Groq for LLM
 - **LiveKit Cloud Account** (for voice features)
 
 ### Installation Steps
@@ -79,7 +79,7 @@ LIVEKIT_API_KEY=your-key
 LIVEKIT_API_SECRET=your-secret
 DEEPGRAM_API_KEY=your-key
 ELEVENLABS_API_KEY=your-key
-OPENAI_API_KEY=your-key
+Groq_API_KEY=your-key
 ```
 
 ### How to Run
