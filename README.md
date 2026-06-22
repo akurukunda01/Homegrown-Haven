@@ -20,6 +20,8 @@ HomegrownHaven helps users discover and support local businesses in their commun
 - **Analytics Dashboard** - View business statistics and insights
 - **User Authentication** - Secure login via Auth0
 
+More Information on the features can be found here: 
+
 ### Technology Stack
 
 | Layer | Technology |
