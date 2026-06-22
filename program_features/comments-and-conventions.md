@@ -18,7 +18,7 @@ tour guide.
 
 ## Technical details
 
-### 1. Comments explain intent ("why", not "what")
+### 1. Comments explain intent 
 Short comments mark *purpose*, especially around non-obvious logic:
 
 ```python
@@ -62,7 +62,3 @@ Larger files group related code under labeled sections, e.g. in `app.py`:
 The frontend uses **ESLint** (`npm run lint` in `homegrown-haven/`) to keep
 formatting and basic quality consistent, so style isn't left to chance.
 
-### Why this meets the bar
-Comments are **logical, useful, and complete** — they explain reasoning, mark
-sections, and document each module/function — and naming/formatting follow clear,
-consistent conventions per language.
