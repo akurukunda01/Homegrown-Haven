@@ -1,19 +1,15 @@
 # Authentication & Authorization
 
-Two different questions, often confused:
-
-- **Authentication** — *who are you?* Handled by **Auth0**: the user logs in with
+- **Authentication** — andled by **Auth0**: the user logs in with
   Google or email/password, and the app gets back a verified identity.
-- **Authorization** — *are you allowed to do this?* Handled in our own backend:
-  even once we know who you are, you can only edit *your own* reviews and
+- **Authorization** — Handled in our own backend:
+  you can only edit *your own* reviews and
   favorites.
 
-The app does both.
 
-## Logging in (Auth0)
+## Auth0
 
-We don't store passwords ourselves — that's a security risk we don't want to own.
-Instead the frontend hands login off to **Auth0** (`App.jsx` wraps the whole app
+The frontend hands login off to **Auth0** (`App.jsx` wraps the whole app
 in `Auth0Provider`). Auth0 handles the login screen, social sign-in, and password
 resets, then returns a verified user profile (a `sub` id, email, name, picture).
 
@@ -38,10 +34,8 @@ The incoming profile is validated first by the `AuthSyncUser` Pydantic model
 the many extra fields Auth0 sends that we don't use. After this, every user has a
 stable local `id` that the rest of the app uses.
 
-## Authorization — the ownership check
-
-This is the part that matters most. Knowing *who* you are isn't enough; the
-backend also enforces *what you're allowed to touch*. A small helper resolves the
+## Authorization 
+A small helper resolves the
 caller's local id from a header on every protected request (`validation.py`):
 
 ```python
@@ -68,14 +62,8 @@ if current_user_id(cursor) != user_id:
     return jsonify({'error': 'Not authorized to modify these favorites'}), 403
 ```
 
-- **The check is on the *server*, not the screen.** Hiding an "edit" button in the
-  UI is a courtesy, not security — anyone can call the API directly. The real
-  guard is here, where it can't be bypassed.
-- **`403` vs `404`.** A missing review returns **404 Not Found**; a review that
-  exists but isn't yours returns **403 Forbidden**. Different problems, different
-  answers.
 
-## Where each piece lives
+
 
 | Concern | Where |
 |---|---|
