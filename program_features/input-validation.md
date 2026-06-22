@@ -1,8 +1,6 @@
 # Input Validation
 
-## In plain English
-
-Before the app trusts anything a user types, it checks it twice — for **shape**
+The app validates all user input for **shape**
 and for **meaning**:
 
 - **Syntactic validation (shape):** Is it the right *type, length, and format*?
@@ -12,14 +10,12 @@ and for **meaning**:
   "this business actually exists", "you are allowed to edit *this* review").
 
 Checks happen in two places: the **frontend** stops obvious mistakes early for a
-nicer experience, and the **backend** re-checks everything because the frontend
-can be bypassed. The backend is the real guard.
+nicer experience, and the **backend** re-checks everything.
 
----
 
 ## Technical details
 
-### Backend (the trust boundary)
+### Backend
 
 **Syntactic — Pydantic models (`validation.py`)**
 Each kind of request has a model describing its allowed shape. If the data
@@ -54,7 +50,7 @@ if existing['user_id'] != current_user_id(cursor):
 A catch-all error handler returns clean JSON instead of a crash page if anything
 unexpected happens.
 
-### Frontend (early, friendly checks) — `homegrown-haven/src/`
+### Frontend - `homegrown-haven/src/`
 A shared helper file avoids copy-pasting rules:
 
 ```js
@@ -70,8 +66,6 @@ export const SEARCH_MAX = 200;
 - `page.jsx` — search/filter values go through `buildQueryString` so special
   characters are **encoded**, never injected raw into the URL.
 
-### Why this meets the bar
 Validation is applied on **both syntactical and semantic levels** — type/format/
 length via Pydantic and HTML/JS checks, plus existence and ownership checks in
-the routes — which is the top-level criterion for the input-validation
-requirement.
+the routes.
