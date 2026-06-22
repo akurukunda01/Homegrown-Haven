@@ -61,7 +61,7 @@ def search_businesses(query="", category=None, min_rating=None, ...):
 
 ## Server Tools
 
-The server exposes **17 tools**. 
+The server exposes **16 tools**. 
 
 | Group | Tools |
 |---|---|

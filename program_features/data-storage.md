@@ -3,13 +3,13 @@
 
 HomegrownHaven stores data in three layers:
 
-1. **The database ** — a PostgreSQL database keeps everything
+1. **The database** — a PostgreSQL database keeps everything
    permanent: businesses, users, reviews, favorites, and deals. This survives
    even after the app is closed.
 2. **The backend** — when the Flask server answers a request,
    it pulls rows from the database into Python **lists** and **dictionaries**,
    shapes them, and sends them out.
-3. **The frontend)** — the React app holds what you currently
+3. **The frontend** — the React app holds what you currently
    see on screen in **state variables** (arrays and objects). When this data
    changes, the screen updates automatically.
 

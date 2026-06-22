@@ -2,7 +2,7 @@
 
 Users can generate their own business report for data analysis in addition to navigating the analytics tab of the site.
 
-- **Columns** — which fields to include (Name, Category, Rating, Email, et.).
+- **Columns** — which fields to include (Name, Category, Rating, Email, etc.).
 - **Data scope** — which businesses (current list, all, favorites only, or only
   ones with deals).
 - **Sort order** — by rating, name, distance, or reviews; ascending/descending.
@@ -18,7 +18,7 @@ Users can generate their own business report for data analysis in addition to na
 | `homegrown-haven/src/components/report-fields.js` | The shared list of available fields + default settings. |
 | `homegrown-haven/src/page.jsx` (`generateReport`) | Builds and downloads the actual file. |
 
-### (`report-fields.js`)
+### 1. The field catalog (`report-fields.js`)
 A single array defines every possible column and *how to read it* from a
 business. This same array drives the on-screen toggles and the file output,
 so they can never drift apart:
@@ -31,7 +31,7 @@ export const FIELD_DEFS = [
 ];
 ```
 
-### 2. (`reportConfig`)
+### 2. The user's choices (`reportConfig`)
 The user's choices live in one object:
 
 ```js
@@ -39,7 +39,7 @@ The user's choices live in one object:
   sortBy: 'rating', sortOrder: 'desc', format: 'csv' }
 ```
 
-### 3. Generating the report (`page.jsx --> generateReport`)
+### 3. Generating the report (`page.jsx` → `generateReport`)
 The function (1) picks the rows for the chosen **scope**, (2) **sorts** them,
 (3) keeps only the **selected columns**, then (4) outputs the chosen **format**:
 

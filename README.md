@@ -79,7 +79,7 @@ LIVEKIT_API_KEY=your-key
 LIVEKIT_API_SECRET=your-secret
 DEEPGRAM_API_KEY=your-key
 ELEVENLABS_API_KEY=your-key
-Groq_API_KEY=your-key
+GROQ_API_KEY=your-key
 ```
 
 ### How to Run
@@ -178,7 +178,7 @@ User speaks → Microphone → LiveKit (WebRTC) → Deepgram STT → LLM → MCP
 **AI Services:**
 - [Deepgram](https://deepgram.com/) - Speech-to-text API
 - [ElevenLabs](https://elevenlabs.io/) - Text-to-speech API
-- [OpenAI](https://openai.com/) - Large language model API
+- [Groq](https://groq.com/) - Large language model API (`llama-4-scout`)
 - [Silero VAD](https://github.com/snakers4/silero-vad) - Voice activity detection (MIT License)
 
 ### Attribution
