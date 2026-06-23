@@ -1,7 +1,7 @@
 # Reviews, Favorites & Deals
 
 These are the three ways users interact *with* a business once they've found it.
-All three follow the same backbone: a REST endpoint in `app.py`, a PostgreSQL
+All three follow the same backbone: a REST endpoint in `backend/app.py`, a PostgreSQL
 table linked by foreign keys, and (for the two that change user data) an
 ownership check.
 
@@ -18,7 +18,7 @@ Reviews are the richest feature: users can **C**reate, **R**ead, **U**pdate, and
 | Delete | `DELETE /delete_reviews/<id>` | owner only |
 
 Creating a review shows the **two-layer validation** the app uses everywhere —
-first the *shape* (Pydantic), then the *meaning* (database) (`app.py`):
+first the *shape* (Pydantic), then the *meaning* (database) (`backend/app.py`):
 
 ```python
 review, errors = validate(ReviewCreate, request.json)   # 1. shape: rating 1-5, comment 10-500
@@ -50,7 +50,7 @@ Two helper endpoints keep a business's headline numbers fresh:
 ## Favorites — a personal saved list
 
 A favorite is just a link between a user and a business, so the table is a simple
-join row. Adding one is guarded on three fronts (`app.py`):
+join row. Adding one is guarded on three fronts (`backend/app.py`):
 
 ```python
 fav, errors = validate(FavoriteCreate, request.json)         # shape

@@ -12,13 +12,13 @@ It's built with **FastMCP**, which is a library that makes a Python function int
 an MCP tool just by adding a decorator on top of it. The server runs separately
 from everything else, on **port 8001**, and the voice agent connects to it.
 
-The wiring is one line in `voice_chat.py`:
+The wiring is one line in `backend/voice_chat.py`:
 
 ```python
 mcp_servers=[mcp.MCPServerHTTP(url="http://localhost:8001/mcp")]
 ```
 
-That's when the LLM (in `voice_chat.py`) gets handed the toolbox
+That's when the LLM (in `backend/voice_chat.py`) gets handed the toolbox
 (in `voice_mcp/main.py`).
 
 ## Tool Example
