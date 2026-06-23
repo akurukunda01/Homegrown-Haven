@@ -16,7 +16,7 @@ HomegrownHaven stores data in three layers:
 
 ## Technical details
 
-### 1. Database layer — PostgreSQL (`db.sql`, `app.py`)
+### 1. Database layer — PostgreSQL (`backend/db.sql`, `backend/app.py`)
 Five related tables: `businesses`, `users`, `reviews`, `favorites`, `deals`.
 Each column uses the correct data type (e.g. `rating DECIMAL`, `created_at
 TIMESTAMP`, `latitude/longitude` numeric), and tables are linked by foreign keys
@@ -26,11 +26,11 @@ Rows are read using parameterized queries through a shared connection helper so
 results come back as dictionaries:
 
 ```python
-# app.py — RealDictCursor returns each row as a dict, not a tuple
+# backend/app.py — RealDictCursor returns each row as a dict, not a tuple
 g.cursor = g.db.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 ```
 
-### 2. Backend layer — Python lists & dicts (`app.py`, `validation.py`)
+### 2. Backend layer — Python lists & dicts (`backend/app.py`, `backend/validation.py`)
 Query results become **lists of dictionaries** that are filtered/sorted in
 memory before being returned as JSON:
 
@@ -40,7 +40,7 @@ businesses = sorted(businesses, key=lambda x: x.get('distance_value', 999))
 ```
 
 Structured request data is held in **Pydantic models** (typed objects) so each
-field has a guaranteed type — see `validation.py` (`ReviewCreate`,
+field has a guaranteed type — see `backend/validation.py` (`ReviewCreate`,
 `BusinessQuery`, etc.).
 
 ### 3. Frontend layer — React state (`homegrown-haven/src/page.jsx`)

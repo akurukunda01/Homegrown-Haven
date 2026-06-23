@@ -24,13 +24,13 @@ This folder explains how it all fits together:
 
 | Job | What I used | Lives in |
 |---|---|---|
-| Streaming audio in real time | **LiveKit Agents** | `voice_chat.py` |
-| Speech → text (STT) | **Deepgram** (`nova-2`) | `voice_chat.py` |
-| The "brain" that decides what to do | **Groq** LLM (`llama-4-scout`) | `voice_chat.py` |
-| Text → speech (TTS) | **ElevenLabs** | `voice_chat.py` |
-| Knowing when you've started/stopped talking | **Silero VAD** | `voice_chat.py` |
+| Streaming audio in real time | **LiveKit Agents** | `backend/voice_chat.py` |
+| Speech → text (STT) | **Deepgram** (`nova-2`) | `backend/voice_chat.py` |
+| The "brain" that decides what to do | **Groq** LLM (`llama-4-scout`) | `backend/voice_chat.py` |
+| Text → speech (TTS) | **ElevenLabs** | `backend/voice_chat.py` |
+| Knowing when you've started/stopped talking | **Silero VAD** | `backend/voice_chat.py` |
 | The tools the AI can run | **FastMCP** | `voice_mcp/main.py` |
-| Pushing live updates to the screen | **Flask-Sock** (WebSocket) | `app.py`, `page.jsx` |
+| Pushing live updates to the screen | **Flask-Sock** (WebSocket) | `backend/app.py`, `page.jsx` |
 
 ## Example User Flow
 
@@ -51,7 +51,7 @@ User: "Find coffee shops"
 ```
 
 - **The model is told to behave like a person, not a machine.** In
-  `voice_chat.py` the assistant's instructions say things like "keep responses
+  `backend/voice_chat.py` the assistant's instructions say things like "keep responses
   to 1–2 sentences," "never read out more than 3 items," and "don't mention tool
   names." That's why it summarizes instead of reading a list of 8 businesses.
 - **Every tool writes its own spoken reply.** Each tool returns a ready-made
@@ -62,9 +62,9 @@ User: "Find coffee shops"
 
 The voice feature is three programs running together:
 
-1. `python app.py` — the Flask API + WebSocket (port 8000)
+1. `python backend/app.py` — the Flask API + WebSocket (port 8000)
 2. `cd voice_mcp && uv run main.py` — the tool server (port 8001)
-3. `python voice_chat.py` — the LiveKit voice agent
+3. `python backend/voice_chat.py` — the LiveKit voice agent
 
 Once all three are up and the browser joins the audio room, you can start
 talking. For more details of the last two pieces, see **mcp.md** and

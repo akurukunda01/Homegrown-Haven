@@ -27,7 +27,7 @@ search box / filters (page.jsx)
 ## Validated, parameterized queries
 
 Every query parameter is first parsed by the `BusinessQuery` model
-(`validation.py`), which enforces sane ranges before any SQL runs:
+(`backend/validation.py`), which enforces sane ranges before any SQL runs:
 
 ```python
 class BusinessQuery(BaseModel):
@@ -40,7 +40,7 @@ class BusinessQuery(BaseModel):
 ```
 
 The SQL itself is built with **parameterized placeholders** (`%s`), never string
-concatenation, so user input can't be injected into the query (`app.py`):
+concatenation, so user input can't be injected into the query (`backend/app.py`):
 
 ```python
 sql = "SELECT * FROM businesses WHERE name ILIKE %s AND latitude IS NOT NULL ..."
@@ -89,7 +89,7 @@ business['distance_value'] = distance
 
 Once distances exist, the list is filtered to those within `max_distance` and
 sorted nearest-first. If the user *hasn't* shared a location, there's nothing to
-measure, so the list falls back to sorting by rating (`app.py`):
+measure, so the list falls back to sorting by rating (`backend/app.py`):
 
 ```python
 if user_lat and user_lng:
