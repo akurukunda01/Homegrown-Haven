@@ -55,7 +55,6 @@ businesses.forEach(b => {
   appears when the user has shared a location; without it, that card stays empty
   rather than showing wrong numbers.
 
-## Why frontend instead of backend?
 
 The dataset is small and already loaded, so a round-trip to a SQL aggregate would
 be slower and add an endpoint to maintain. Computing in the component keeps the

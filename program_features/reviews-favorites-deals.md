@@ -47,7 +47,7 @@ Two helper endpoints keep a business's headline numbers fresh:
 > **[input-validation.md](./input-validation.md)**; the ownership rule lives in
 > **[authentication.md](./authentication.md)**.
 
-## Favorites — a personal saved list
+## Favorites 
 
 A favorite is just a link between a user and a business, so the table is a simple
 join row. Adding one is guarded on three fronts (`backend/app.py`):
@@ -71,7 +71,7 @@ The companion endpoints are `DELETE /favorites/<user_id>/<business_id>` (remove)
 and `GET /favorites/check/<user_id>/<business_id>` (is this one saved?), which the
 heart icon on each card uses.
 
-## Deals — read-only promotions
+## Deals 
 
 Deals are promotions a business offers (a discount + a code). Users only *read*
 them, so there's no validation or ownership to worry about — but the queries do

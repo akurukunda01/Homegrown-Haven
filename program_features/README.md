@@ -15,9 +15,7 @@ each feature.
 | [analytics-dashboard.md](./analytics-dashboard.md) | The Analytics tab — stats derived in the browser from the current business list |
 | [intelligent-voice-feature/](./intelligent-voice-feature/overview.md) | The AI voice assistant that can both talk and drive the screen (3 docs, see below) |
 
-## Cross-cutting concerns
 
-These apply across the whole app, not to one feature:
 
 | Doc | What it covers |
 |---|---|
@@ -35,7 +33,7 @@ The standout feature has its own three-part breakdown in
 - **[mcp.md](./intelligent-voice-feature/mcp.md)** — the tools the assistant uses to take action
 - **[websockets.md](./intelligent-voice-feature/websockets.md)** — how the assistant drives the screen live
 
-## How these connect
+
 
 Several features lean on the same foundations, so the docs link to each other:
 
