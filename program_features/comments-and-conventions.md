@@ -22,7 +22,7 @@ tour guide.
 Short comments mark *purpose*, especially around non-obvious logic:
 
 ```python
-# app.py
+# backend/app.py
 # Guard against CSV injection and escape embedded quotes/newlines.
 # Authorization: caller may only modify their own favorites
 ```
@@ -35,7 +35,7 @@ Short comments mark *purpose*, especially around non-obvious logic:
 Python files and functions start with a docstring describing their role:
 
 ```python
-# validation.py
+# backend/validation.py
 """Request validation for the HomegrownHaven Flask API.
 Pydantic models provide *syntactic* validation; routes add *semantic* checks."""
 
@@ -52,7 +52,7 @@ def current_user_id(cursor):
 | Constants | `UPPER_SNAKE_CASE` | `FIELD_DEFS`, `SEARCH_MAX` |
 
 ### 4. Section banners for navigation
-Larger files group related code under labeled sections, e.g. in `app.py`:
+Larger files group related code under labeled sections, e.g. in `backend/app.py`:
 
 ```python
 # ==================== FAVORITES ROUTES ====================

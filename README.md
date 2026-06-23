@@ -35,6 +35,81 @@ More Information on the features can be found here: [https://github.com/akurukun
 
 ---
 
+## Repository Structure
+
+The repo has three runnable parts — a React frontend, a Python/Flask backend, and
+a separate tool server for the voice agent — plus the database schema and docs.
+
+```
+HomegrownHaven/
+│
+├── homegrown-haven/            # ── FRONTEND ── React 19 + Vite + TailwindCSS
+│   ├── src/
+│   │   ├── components/         # UI building blocks:
+│   │   │   ├── business-card.jsx       #   listing card
+│   │   │   ├── business-detail.jsx     #   single-business detail view
+│   │   │   ├── business-filter.jsx     #   category / rating / distance filters
+│   │   │   ├── search-bar.jsx          #   debounced search input
+│   │   │   ├── analytics-dashboard.jsx #   stats tab
+│   │   │   ├── report-config.jsx       #   report builder UI
+│   │   │   ├── report-fields.js        #   report column/field definitions
+│   │   │   ├── auth.jsx                 #   Auth0 login/logout
+│   │   │   └── about-page.jsx           #   static about view
+│   │   ├── utils/
+│   │   │   └── validators.js   # shared client-side input validation
+│   │   ├── page.jsx            # main app: listing, state, WebSocket, LiveKit
+│   │   ├── App.jsx             # Auth0 provider wrapper
+│   │   └── main.jsx            # React entry point
+│   ├── public/                 # screenshots, demo GIF, static assets
+│   └── package.json            # frontend dependencies
+│
+├── backend/                    # ── BACKEND ── Python / Flask
+│   ├── app.py                  #   Flask REST API + WebSocket relay (port 8000)
+│   ├── validation.py           #   Pydantic request models + auth/ownership helpers
+│   ├── voice_chat.py           #   LiveKit voice agent (Deepgram → Groq → ElevenLabs)
+│   ├── generate_token.py       #   LiveKit access-token helper
+│   └── db.sql                  #   PostgreSQL schema + seed data
+│
+├── voice_mcp/                  # ── VOICE TOOLS ── FastMCP server the agent calls (port 8001)
+│   └── main.py                 #   tool definitions (search, navigate, filter, review…)
+│
+├── program_features/           # ── DOCS ── feature-by-feature write-ups (see above)
+├── .env                        # secrets (LiveKit / API keys) — not committed
+└── README.md                   # you are here
+```
+
+**Three things run together for the full app:** the Flask API (`backend/app.py`),
+the frontend (`homegrown-haven/`), and — for voice — the MCP tool server
+(`voice_mcp/`) plus the agent (`backend/voice_chat.py`). See [How to Run](#how-to-run).
+
+---
+
+## Documentation
+
+This README is the starting point — the big picture, setup, and how to run.
+For how each feature actually works (and *why* it's built that way), the
+[`program_features/`](./program_features/README.md) folder has a standalone
+write-up for each one:
+
+| Feature | Doc |
+|---|---|
+| Search, filtering & distance sorting | [search-and-discovery.md](./program_features/search-and-discovery.md) |
+| Reviews, favorites & deals | [reviews-favorites-deals.md](./program_features/reviews-favorites-deals.md) |
+| Customizable reports (CSV / JSON / PDF export) | [customizable-report.md](./program_features/customizable-report.md) |
+| Analytics dashboard | [analytics-dashboard.md](./program_features/analytics-dashboard.md) |
+| **AI voice assistant** (3-part deep dive) | [intelligent-voice-feature/](./program_features/intelligent-voice-feature/overview.md) |
+
+**Cross-cutting concerns** — apply across the whole app:
+
+| Topic | Doc |
+|---|---|
+| Auth0 login & ownership checks | [authentication.md](./program_features/authentication.md) |
+| Two-layer input validation | [input-validation.md](./program_features/input-validation.md) |
+| Data storage across all layers | [data-storage.md](./program_features/data-storage.md) |
+| Code style & conventions | [comments-and-conventions.md](./program_features/comments-and-conventions.md) |
+
+---
+
 ## Setup and Installation
 
 ### Prerequisites
@@ -57,7 +132,7 @@ cd HomegrownHaven
 **2. Set up the database**
 ```bash
 createdb business_directory
-psql -d business_directory -f db.sql
+psql -d business_directory -f backend/db.sql
 ```
 
 **3. Set up the backend**
@@ -89,7 +164,7 @@ GROQ_API_KEY=your-key
 
 **Start the backend** (from root directory):
 ```bash
-python app.py
+python backend/app.py
 # Runs at http://localhost:8000
 ```
 
@@ -105,58 +180,34 @@ npm run dev
 cd voice_mcp && uv run main.py
 # Runs at http://localhost:8001
 
-# Terminal 2: Start voice agent
-python voice_chat.py
+# Terminal 2: Start voice agent (run from root so it finds .env)
+python backend/voice_chat.py dev
 ```
 
 Open http://localhost:5173 in your browser.
 
 ---
 
-## How the Voice AI Agent Works
+## The AI Voice Assistant
 
-The voice assistant allows hands-free navigation using natural speech.
-
-### Architecture
+The standout feature: a hands-free assistant that both **answers questions and
+drives the screen**. Say *"Find coffee shops near me"* or *"Add this to my
+favorites"* and the UI responds in real time — voice and clicks hit the exact
+same backend, so they always behave identically.
 
 ```
-User speaks → Microphone → LiveKit (WebRTC) → Deepgram STT → LLM → MCP Tools → Flask API → WebSocket → React UI
-                                                                        ↓
-                                                              ElevenLabs TTS → Speaker
+User speaks → LiveKit → Deepgram (STT) → LLM → MCP tools → Flask → WebSocket → React UI
+                                                                          ↓
+                                                            ElevenLabs (TTS) → reply
 ```
 
-### Components
+**Try saying:** "Find coffee shops near me" · "Open Pet Haven" · "Show me the
+reviews" · "What deals are available?" · "Sort by rating" · "Go back to the list"
 
-| Component | Purpose |
-|-----------|---------|
-| **LiveKit** | Real-time audio streaming between browser and server |
-| **Deepgram** | Converts speech to text (Speech-to-Text) |
-| **LLM** | Understands user intent and decides which action to take |
-| **MCP Server** | Provides tools the LLM can call (search, navigate, favorite, etc.) |
-| **ElevenLabs** | Converts responses back to speech (Text-to-Speech) |
-
-### Example Voice Commands
-
-- "Find coffee shops near me"
-- "Open Pet Haven"
-- "Show me the reviews"
-- "Add this to my favorites"
-- "What deals are available?"
-- "Sort by rating"
-- "Go back to the list"
-
-### How It Works
-
-1. User clicks the AI Assistant button to connect
-2. User speaks a command (e.g., "Find restaurants")
-3. Audio streams to LiveKit Cloud
-4. Deepgram transcribes speech to text
-5. LLM interprets the request and calls the appropriate MCP tool
-6. MCP tool sends a command to the Flask backend
-7. Flask broadcasts the command via WebSocket
-8. React frontend updates the UI
-9. LLM response is converted to speech via ElevenLabs
-10. User hears the confirmation
+📖 **Full breakdown** in [`program_features/intelligent-voice-feature/`](./program_features/intelligent-voice-feature/overview.md) —
+the user flow ([overview](./program_features/intelligent-voice-feature/overview.md)),
+the tools the assistant calls ([mcp](./program_features/intelligent-voice-feature/mcp.md)),
+and how it drives the screen live ([websockets](./program_features/intelligent-voice-feature/websockets.md)).
 
 ---
 

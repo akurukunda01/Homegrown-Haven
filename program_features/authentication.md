@@ -18,7 +18,7 @@ resets, then returns a verified user profile (a `sub` id, email, name, picture).
 Auth0 knows who you are, but our own tables (reviews, favorites) need a local
 `user_id` to attach rows to. So the first time someone logs in, the frontend
 POSTs their Auth0 profile to `/auth/sync-user`, which **creates the user if new,
-or updates them if returning** (`app.py`):
+or updates them if returning** (`backend/app.py`):
 
 ```python
 cursor.execute('SELECT * FROM users WHERE auth0_id = %s', (auth0_id,))
@@ -30,13 +30,15 @@ else:
 ```
 
 The incoming profile is validated first by the `AuthSyncUser` Pydantic model
-(`validation.py`) — it requires a `sub` and a valid-looking `email`, and ignores
+(`backend/validation.py`) — it requires a `sub` and a valid-looking `email`, and ignores
 the many extra fields Auth0 sends that we don't use. After this, every user has a
 stable local `id` that the rest of the app uses.
 
-## Authorization 
-A small helper resolves the
-caller's local id from a header on every protected request (`validation.py`):
+## Authorization — the ownership check
+
+This is the part that matters most. Knowing *who* you are isn't enough; the
+backend also enforces *what you're allowed to touch*. A small helper resolves the
+caller's local id from a header on every protected request (`backend/validation.py`):
 
 ```python
 def current_user_id(cursor):
@@ -50,7 +52,7 @@ def current_user_id(cursor):
 ```
 
 Then every route that changes user-owned data compares that id to the row's owner
-before doing anything (`app.py`):
+before doing anything (`backend/app.py`):
 
 ```python
 # editing a review you don't own → blocked
@@ -68,7 +70,7 @@ if current_user_id(cursor) != user_id:
 | Concern | Where |
 |---|---|
 | Login UI, social sign-in, sessions | **Auth0** (`App.jsx`) |
-| Create/update the local user record | `/auth/sync-user` (`app.py`) |
-| Validate the incoming profile | `AuthSyncUser` (`validation.py`) |
-| Resolve "who is calling?" | `current_user_id()` (`validation.py`) |
-| Enforce "can they do this?" | ownership checks in reviews/favorites routes (`app.py`) |
+| Create/update the local user record | `/auth/sync-user` (`backend/app.py`) |
+| Validate the incoming profile | `AuthSyncUser` (`backend/validation.py`) |
+| Resolve "who is calling?" | `current_user_id()` (`backend/validation.py`) |
+| Enforce "can they do this?" | ownership checks in reviews/favorites routes (`backend/app.py`) |

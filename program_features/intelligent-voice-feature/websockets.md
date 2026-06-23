@@ -37,7 +37,7 @@ ws.onmessage = (event) => {
 ```
 
 On the backend, Flask keeps track of every browser that's connected, and has a
-helper to broadcast a message to all of them (`app.py`):
+helper to broadcast a message to all of them (`backend/app.py`):
 
 ```python
 connected_clients = set()          # every open browser tab

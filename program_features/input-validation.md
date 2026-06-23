@@ -17,7 +17,7 @@ nicer experience, and the **backend** re-checks everything.
 
 ### Backend
 
-**Syntactic — Pydantic models (`validation.py`)**
+**Syntactic — Pydantic models (`backend/validation.py`)**
 Each kind of request has a model describing its allowed shape. If the data
 doesn't fit, it's rejected automatically:
 
@@ -33,7 +33,7 @@ email check), and `BusinessQuery` (rating 0–5, latitude −90..90, longitude
 −180..180, max_distance ≥ 0). A small `validate()` helper turns any failure into
 a clean `{"errors": [...]}` response with status **400**.
 
-**Semantic — checks inside the routes (`app.py`)**
+**Semantic — checks inside the routes (`backend/app.py`)**
 After the shape is valid, the route checks meaning against the database:
 
 ```python

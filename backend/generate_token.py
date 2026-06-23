@@ -2,9 +2,12 @@
 import os
 from livekit import api
 from flask import Flask
+from dotenv import load_dotenv
 
-LIVEKIT_API_KEY = 'APIXKBphKjL2cXx'
-LIVEKIT_API_SECRET='ewsEhpZeuTFIZVio6eG6kONW1ZOnthtUifCpdSSEssjB'
+load_dotenv()
+
+LIVEKIT_API_KEY = os.getenv('LIVEKIT_API_KEY')
+LIVEKIT_API_SECRET = os.getenv('LIVEKIT_API_SECRET')
 
 app = Flask(__name__)
 
