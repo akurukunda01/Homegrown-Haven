@@ -50,6 +50,30 @@ if existing['user_id'] != current_user_id(cursor):
 A catch-all error handler returns clean JSON instead of a crash page if anything
 unexpected happens.
 
+### Implementation Full Example
+```python
+@app.route('/add_reviews', methods=['POST'])
+def create_review():
+    # Syntactic: parse request body through the ReviewCreate model
+    review, errors = validate(ReviewCreate, request.json)
+    if errors:
+        return jsonify({'errors': errors}), 400   # e.g. ["rating: Input should be <= 5"]
+
+    # `review` is now a validated ReviewCreate instance — safe to use
+    conn, cursor = get_db()
+
+    # Semantic: business must actually exist
+    cursor.execute('SELECT id FROM businesses WHERE id = %s', (review.business,))
+    if not cursor.fetchone():
+        return jsonify({'errors': ['business: does not exist']}), 400
+
+    # Insert using the validated, typed fields
+    cursor.execute(
+        'INSERT INTO reviews (user_id, business_id, rating, comment) VALUES (%s, %s, %s, %s) RETURNING *',
+        (current_user_id(cursor) or 1, review.business, review.rating, review.comment)
+    )
+```
+
 ### Frontend - `homegrown-haven/src/`
 A shared helper file avoids copy-pasting rules:
 
