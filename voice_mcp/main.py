@@ -5,13 +5,45 @@ All tools return voice-friendly messages.
 """
 
 from mcp.server.fastmcp import FastMCP
+from dotenv import load_dotenv
+import os
 import requests
 from typing import Optional, Literal
+
+# Load local environment (e.g. VOICE_AGENT_AUTH0_ID) so `uv run main.py` works as-is.
+load_dotenv()
 
 # Create an MCP server
 mcp = FastMCP("voice_agent", json_response=True, port=8001)
 
 BASE_URL = "http://localhost:8000"  # Your Flask server URL
+
+# The voice agent acts on behalf of a single signed-in user. Their identity is
+# resolved server-side from configuration -- never supplied by the LLM, which
+# has no reliable way to know it. Set VOICE_AGENT_AUTH0_ID to the active user's
+# Auth0 subject id.
+VOICE_AGENT_AUTH0_ID = os.getenv("VOICE_AGENT_AUTH0_ID")
+
+
+def _resolve_voice_user():
+    """Resolve the active user's local id for backend calls.
+
+    Returns (user_id, None) on success, or (None, error_message) if the user
+    can't be identified. Mirrors how the Flask routes use current_user_id():
+    identity comes from the server, not from the language model.
+    """
+    if not VOICE_AGENT_AUTH0_ID:
+        return None, "I'm not sure who you are right now. Please make sure you're signed in."
+    try:
+        resp = requests.get(
+            f"{BASE_URL}/auth/current-user",
+            params={"auth0_id": VOICE_AGENT_AUTH0_ID},
+        )
+        if not resp.ok:
+            return None, "I couldn't verify your account, so I can't update your favorites right now."
+        return resp.json()["id"], None
+    except Exception:
+        return None, "I couldn't verify your account, so I can't update your favorites right now."
 
 
 # search
@@ -393,15 +425,19 @@ def get_reviews(
 
 
 @mcp.tool()
-def add_review(business_id: int, rating: int, comment: str, user_id: int):
+def add_review(business_id: int, rating: int, comment: str):
     """
-    Add a new review to a business.
+    Add a new review to a business on behalf of the signed-in user.
 
     business_id: ID of the business to review
     rating: Star rating from 1-5
     comment: Review text (10-500 characters)
-    user_id: ID of the user submitting the review
+
+    The reviewer's identity is resolved server-side -- do not pass a user id.
     """
+    if not VOICE_AGENT_AUTH0_ID:
+        return {"error": True, "message": "I'm not sure who you are right now. Please make sure you're signed in."}
+
     if not isinstance(rating, int) or rating < 1 or rating > 5:
         return {"error": True, "message": "Please give a rating between 1 and 5 stars."}
 
@@ -414,7 +450,7 @@ def add_review(business_id: int, rating: int, comment: str, user_id: int):
     try:
         response = requests.post(f"{BASE_URL}/add_reviews",
             json={"business": business_id, "rating": rating, "comment": comment_stripped},
-            headers={"X-Auth0-User-ID": str(user_id)}
+            headers={"X-Auth0-User-ID": VOICE_AGENT_AUTH0_ID}
         )
 
         if not response.ok:
@@ -442,14 +478,21 @@ def add_review(business_id: int, rating: int, comment: str, user_id: int):
 #favorites
 
 @mcp.tool()
-def get_user_favorites(user_id: int):
+def get_user_favorites():
     """
-    Get all favorited businesses for a user.
+    Get all favorited businesses for the signed-in user.
 
-    user_id: ID of the user
+    The user's identity is resolved server-side -- do not pass a user id.
     """
+    user_id, error = _resolve_voice_user()
+    if error:
+        return {"error": True, "message": error}
+
     try:
-        response = requests.get(f"{BASE_URL}/favorites/{user_id}")
+        response = requests.get(
+            f"{BASE_URL}/favorites/{user_id}",
+            headers={"X-Auth0-User-ID": VOICE_AGENT_AUTH0_ID},
+        )
         if not response.ok:
             return {"error": True, "message": "I couldn't get your favorites right now."}
 
@@ -473,20 +516,27 @@ def get_user_favorites(user_id: int):
 
 
 @mcp.tool()
-def toggle_favorite(user_id: int, business_id: int, action: Literal["add", "remove"]):
+def toggle_favorite(business_id: int, action: Literal["add", "remove"]):
     """
-    Add or remove a business from favorites.
+    Add or remove a business from the signed-in user's favorites.
 
-    user_id: ID of the user
     business_id: ID of the business
     action: "add" to favorite, "remove" to unfavorite
+
+    The user's identity is resolved server-side -- do not pass a user id.
     """
+    user_id, error = _resolve_voice_user()
+    if error:
+        return {"error": True, "message": error}
+
+    headers = {"X-Auth0-User-ID": VOICE_AGENT_AUTH0_ID}
     try:
         if action == "add":
-            response = requests.post(f"{BASE_URL}/favorites", json={
-                "user_id": user_id,
-                "business_id": business_id
-            })
+            response = requests.post(
+                f"{BASE_URL}/favorites",
+                json={"user_id": user_id, "business_id": business_id},
+                headers=headers,
+            )
             if not response.ok:
                 data = response.json()
                 if "already" in str(data).lower():
@@ -501,7 +551,10 @@ def toggle_favorite(user_id: int, business_id: int, action: Literal["add", "remo
             return {"success": True, "message": "Added to your favorites!"}
 
         else:  # remove
-            response = requests.delete(f"{BASE_URL}/favorites/{user_id}/{business_id}")
+            response = requests.delete(
+                f"{BASE_URL}/favorites/{user_id}/{business_id}",
+                headers=headers,
+            )
             if not response.ok:
                 return {"error": True, "message": "I couldn't remove that from your favorites."}
 

@@ -50,19 +50,24 @@ class FavoriteCreate(BaseModel):
 
 class AuthSyncUser(BaseModel):
     sub: str = Field(min_length=1, max_length=255)
-    email: str = Field(max_length=255)
+    # email may be absent from some Auth0 connections; the sync endpoint derives
+    # a placeholder from sub when it's missing.
+    email: Optional[str] = Field(default=None, max_length=255)
     nickname: Optional[str] = Field(default=None, max_length=255)
     name: Optional[str] = Field(default=None, max_length=255)
     given_name: Optional[str] = Field(default=None, max_length=255)
     family_name: Optional[str] = Field(default=None, max_length=255)
-    picture: Optional[str] = Field(default=None, max_length=500)
+    # Real avatar URLs (e.g. Google) can be long; keep generous headroom.
+    picture: Optional[str] = Field(default=None, max_length=2048)
 
     # Auth0 payloads carry many extra fields we don't use; ignore them.
     model_config = {"extra": "ignore"}
 
     @field_validator("email")
     @classmethod
-    def _check_email(cls, v: str) -> str:
+    def _check_email(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
         if not _EMAIL_RE.match(v):
             raise ValueError("must be a valid email address")
         return v

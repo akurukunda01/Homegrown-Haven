@@ -17,7 +17,7 @@ export default function BusinessDetail({ business, user, onBack, onAskAI, isFavo
   const [newReview, setNewReview] = useState({
     rating: 0,
     comment: '',
-    author: user.id
+    author: user?.id
   });
 
   useEffect(() => {
@@ -104,7 +104,7 @@ export default function BusinessDetail({ business, user, onBack, onAskAI, isFavo
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Auth0-User-ID': user.sub // Pass Auth0 ID
+          'X-Auth0-User-ID': user?.auth0_id // Pass Auth0 ID (currentUser DB record)
         },
         body: JSON.stringify({
           business: business.id,
@@ -132,7 +132,7 @@ export default function BusinessDetail({ business, user, onBack, onAskAI, isFavo
       // Success - refresh and close
       await fetchReviews();
       setShowAddReview(false);
-      setNewReview({ rating: 0, comment: '', author: user.id });
+      setNewReview({ rating: 0, comment: '', author: user?.id });
       setFormErrors({});
     } catch (error) {
       console.error('Error adding review:', error);

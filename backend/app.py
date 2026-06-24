@@ -143,32 +143,40 @@ def sync_auth0_user():
             return jsonify({'errors': errors}), 400
 
         auth0_id = data.sub
-        email = data.email
-        user_name = data.nickname or data.name or email.split('@')[0]
+        # email is NOT NULL in the DB; derive a stable placeholder when Auth0
+        # doesn't provide one.
+        email = data.email or f"{auth0_id.replace('|', '_')}@noemail.local"
         first_name = data.given_name or ''
         last_name = data.family_name or ''
-        avatar_url = data.picture or ''
+        # avatar_url column is limited; truncate to stay within VARCHAR(255).
+        avatar_url = (data.picture or '')[:255]
 
         conn, cursor = get_db()
-        
+
         cursor.execute('SELECT * FROM users WHERE auth0_id = %s', (auth0_id,))
         user = cursor.fetchone()
-        
+
         if user:
+            # Don't touch user_name on update -- it's the UNIQUE handle and is
+            # generated once at creation below.
             cursor.execute('''
-                UPDATE users 
-                SET email = %s, user_name = %s, first_name = %s, last_name = %s, 
+                UPDATE users
+                SET email = %s, first_name = %s, last_name = %s,
                     avatar_url = %s, updated_at = CURRENT_TIMESTAMP
                 WHERE auth0_id = %s
                 RETURNING id, user_name, email, first_name, last_name, avatar_url, auth0_id
-            ''', (email, user_name, first_name, last_name, avatar_url, auth0_id))
-            
+            ''', (email, first_name, last_name, avatar_url, auth0_id))
+
             updated_user = cursor.fetchone()
             conn.commit()
             cursor.close()
             conn.close()
             return jsonify({'message': 'User updated', 'user': updated_user}), 200
         else:
+            # user_name is UNIQUE and VARCHAR(50). Append a sub fragment so two
+            # users with the same display name can't collide.
+            base = data.nickname or data.name or email.split('@')[0]
+            user_name = (base[:40] + '-' + auth0_id.split('|')[-1][:8])[:50]
             cursor.execute('''
                 INSERT INTO users (user_name, email, auth0_id, first_name, last_name, avatar_url)
                 VALUES (%s, %s, %s, %s, %s, %s)
@@ -195,7 +203,7 @@ def get_current_user():
     
     try:
         conn, cursor = get_db()
-        cursor.execute('SELECT id, user_name, email, first_name, last_name, avatar_url FROM users WHERE auth0_id = %s', (auth0_id,))
+        cursor.execute('SELECT id, user_name, email, first_name, last_name, avatar_url, auth0_id FROM users WHERE auth0_id = %s', (auth0_id,))
         user = cursor.fetchone()
         cursor.close()
         conn.close()

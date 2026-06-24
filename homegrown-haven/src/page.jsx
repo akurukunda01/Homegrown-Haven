@@ -543,6 +543,7 @@ export default function Home({ currentUser }) {
 }
 
   const fetchFavorites = async () => {
+    if (!currentUser?.id) return;
     try {
       const response = await fetch(`http://localhost:8000/favorites/${currentUser.id}`, {
         headers: { 'X-Auth0-User-ID': currentUser.auth0_id }
@@ -567,6 +568,10 @@ export default function Home({ currentUser }) {
   };
 
   const toggleFavorite = async (businessId) => {
+    if (!currentUser?.id) {
+      setError('Please sign in to save favorites.');
+      return;
+    }
     const isFavorited = favorites.some(fav => fav.id === businessId);
     try {
       if (isFavorited) {
