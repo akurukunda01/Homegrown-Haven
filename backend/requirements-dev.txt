@@ -1,0 +1,4 @@
+# Test-only dependencies. Install into the project's .venv with:
+#   pip install -r backend/requirements-dev.txt
+# Runtime deps (Flask, psycopg2, pydantic, ...) are already in the .venv.
+pytest>=8.0

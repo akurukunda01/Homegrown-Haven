@@ -37,3 +37,12 @@ export function buildQueryString(params) {
   });
   return search.toString();
 }
+
+// Format a value as a CSV cell: coerce to string, guard against CSV/formula
+// injection (prefix a quote when the value starts with = + - @), and escape
+// embedded double-quotes by doubling them, then wrap the whole cell in quotes.
+export function csvCell(value) {
+  let str = String(value ?? '');
+  if (/^[=+\-@]/.test(str)) str = `'${str}`;
+  return `"${str.replace(/"/g, '""')}"`;
+}

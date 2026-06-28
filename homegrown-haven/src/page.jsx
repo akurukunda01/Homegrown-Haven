@@ -8,7 +8,7 @@ import AnalyticsDashboard from "./components/analytics-dashboard"
 import AboutPage from "./components/about-page"
 import ReportConfig from "./components/report-config"
 import { FIELD_DEFS, DEFAULT_REPORT_CONFIG } from "./components/report-fields"
-import { buildQueryString } from "./utils/validators"
+import { buildQueryString, csvCell } from "./utils/validators"
 import { useAuth0 } from "@auth0/auth0-react"
 import {
   RoomAudioRenderer,
@@ -651,13 +651,6 @@ export default function Home({ currentUser }) {
     link.download = `businesses_${new Date().toISOString().split('T')[0]}.${extension}`
     link.click()
     window.URL.revokeObjectURL(url)
-  }
-
-  // Guard against CSV injection and escape embedded quotes/newlines.
-  const csvCell = (value) => {
-    let str = String(value ?? '')
-    if (/^[=+\-@]/.test(str)) str = `'${str}`
-    return `"${str.replace(/"/g, '""')}"`
   }
 
   const generateReport = () => {
