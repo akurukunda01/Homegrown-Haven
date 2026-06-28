@@ -196,15 +196,15 @@ favorites"* and the UI responds in real time — voice and clicks hit the exact
 same backend, so they always behave identically.
 
 ```
-User speaks → LiveKit → Deepgram (STT) → LLM → MCP tools → Flask → WebSocket → React UI
-                                                                          ↓
+User speaks --> LiveKit --> Deepgram (STT) --> LLM --> MCP tools --> Flask --> WebSocket --> React UI
+                                                                          |
                                                             ElevenLabs (TTS) → reply
 ```
 
 **Try saying:** "Find coffee shops near me" · "Open Pet Haven" · "Show me the
 reviews" · "What deals are available?" · "Sort by rating" · "Go back to the list"
 
-📖 **Full breakdown** in [`program_features/intelligent-voice-feature/`](./program_features/intelligent-voice-feature/overview.md) —
+**Full breakdown** in [`program_features/intelligent-voice-feature/`](./program_features/intelligent-voice-feature/overview.md) —
 the user flow ([overview](./program_features/intelligent-voice-feature/overview.md)),
 the tools the assistant calls ([mcp](./program_features/intelligent-voice-feature/mcp.md)),
 and how it drives the screen live ([websockets](./program_features/intelligent-voice-feature/websockets.md)).
