@@ -118,9 +118,6 @@ write-up for each one:
 
 ### Testing
 
-The project ships an automated test suite — **76 tests (60 backend, 16 frontend), all
-passing**:
-
 - **Backend (`pytest`)** — pure-logic unit tests (Haversine distance, Pydantic request
   validation) **plus** Flask API integration tests that hit the real route handlers
   against a throwaway Postgres database seeded from a self-contained schema (the real
@@ -134,13 +131,10 @@ cd homegrown-haven && npm test             # frontend
 
 Full details, test layout, and example tests are in **[TESTING.md](./TESTING.md)**.
 
-> **Scope note:** the LiveKit voice agent, the MCP tool server, and React component
-> rendering are verified manually rather than unit-tested — they're thin layers over
-> external services. This is called out explicitly in TESTING.md.
 
 ### Accessibility
 
-The core flows are keyboard- and screen-reader-friendly: business cards are
+In addition to the Voice Agent, accesibility is addressed through the core flows being keyboard and screen-reader-friendly: business cards are
 keyboard-operable (Tab + Enter/Space), every form input is associated with its label,
 icon-only buttons have accessible names and hover tooltips, and the interactive star
 rating uses real focusable buttons.
@@ -148,11 +142,6 @@ rating uses real focusable buttons.
 Full feature list and a keyboard verification walkthrough are in
 **[ACCESSIBILITY.md](./ACCESSIBILITY.md)**.
 
-> **Known limitations:** the filter/report slide-over panels are not modal dialogs yet
-> (no focus trapping or Esc-to-close), there is no skip-to-content link, and there are no
-> automated accessibility tests. These are tracked as future work in ACCESSIBILITY.md.
-
----
 
 ## Setup and Installation
 
