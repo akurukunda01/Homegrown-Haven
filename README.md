@@ -33,7 +33,6 @@ More Information on the features can be found here: [https://github.com/akurukun
 | Authentication | Auth0 |
 | Voice AI | LiveKit Agents, Deepgram (STT), ElevenLabs (TTS), Groq (LLM) |
 
----
 
 ## Repository Structure
 
@@ -87,7 +86,7 @@ the frontend (`homegrown-haven/`), and — for voice — the MCP tool server
 ## Documentation
 
 This README is the starting point — the big picture, setup, and how to run.
-For how each feature actually works (and *why* it's built that way), the
+For how each feature actually works, the
 [`program_features/`](./program_features/README.md) folder has a standalone
 write-up for each one:
 
@@ -108,7 +107,7 @@ write-up for each one:
 | Data storage across all layers | [data-storage.md](./program_features/data-storage.md) |
 | Code style & conventions | [comments-and-conventions.md](./program_features/comments-and-conventions.md) |
 
----
+
 
 ## Setup and Installation
 
@@ -247,8 +246,3 @@ and how it drives the screen live ([websockets](./program_features/intelligent-v
 - [LiveKit Agent Guide (ottomator-agents)](https://github.com/coleam00/ottomator-agents/tree/main/livekit-agent) - Reference implementation for building LiveKit voice agents
 - [LiveKit Agent YouTube Tutorial](https://www.youtube.com/watch?v=DJ3sab0jVco) - Video guide by Cole Medin on building AI voice agents with LiveKit
 
----
-
-## License
-
-This project was created for the FBLA Coding & Programming Competition.
