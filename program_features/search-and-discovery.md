@@ -52,12 +52,14 @@ cursor.execute(sql, params)        # values are bound, not pasted in
 - **`'all'` is treated as "no filter."** The frontend sends `category=all` to mean
   "everything," so the backend simply skips that clause.
 
-## Distance — the Haversine formula
+## Distance: the Haversine formula
 
-A rating filter is easy SQL. Distance is not, because the database stores
-latitude/longitude, not miles-from-*you*. We compute that in Python using the
+The database stores distance as a lat/long. So we compute the distance in Python using the
 **Haversine formula**, which measures the straight-line distance between two
 points on a sphere (the Earth):
+
+<img width="647" height="219" alt="image" src="https://github.com/user-attachments/assets/69157af9-ee91-4095-a4d7-980a91371295" />
+
 
 ```python
 def calculate_distance(lat1, lon1, lat2, lon2):
