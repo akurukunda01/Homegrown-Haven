@@ -93,7 +93,7 @@ homegrown-haven/
 
 ### Example tests
 
-**Backend API test** (`backend/tests/test_api.py`) — drives the real `GET /get_local`
+**Backend API test** (`backend/tests/test_api.py`): drives the real `GET /get_local`
 route against the seeded test database and verifies the `min_rating` filter actually
 narrows the results:
 
@@ -102,11 +102,11 @@ def test_get_local_min_rating_filter(self, client):
     resp = client.get("/get_local?min_rating=4")
     assert resp.status_code == 200
     data = resp.get_json()
-    assert len(data) == 2                              # only the 4.5 and 4.8 businesses
-    assert all(float(b["rating"]) >= 4 for b in data)  # every returned row passes the filter
+    assert len(data) == 2                             
+    assert all(float(b["rating"]) >= 4 for b in data)  
 ```
 
-**Frontend unit test** (`homegrown-haven/src/utils/validators.test.js`) — verifies
+**Frontend unit test** (`homegrown-haven/src/utils/validators.test.js`): verifies
 `csvCell()` guards against CSV/formula injection:
 
 ```js
