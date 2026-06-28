@@ -1,9 +1,3 @@
-"""Unit tests for backend/validation.py.
-
-These exercise the Pydantic request models and the validate() wrapper in pure
-isolation -- no database, no Flask request context, no network.
-"""
-
 import pytest
 
 from validation import (
@@ -17,7 +11,6 @@ from validation import (
 from pydantic import ValidationError
 
 
-# --------------------------------------------------------------- ReviewCreate
 class TestReviewCreate:
     def test_valid_review_parses(self):
         review = ReviewCreate(business=1, rating=5, comment="Great local spot!")
@@ -39,7 +32,7 @@ class TestReviewCreate:
             ReviewCreate(business=1, rating=3, comment="too short")
 
     def test_whitespace_only_comment_rejected(self):
-        # Passes the min_length=10 check on raw input but fails after .strip().
+        # Passes min_length=10 on raw input but fails after .strip().
         with pytest.raises(ValidationError):
             ReviewCreate(business=1, rating=3, comment="          ")
 
@@ -48,7 +41,6 @@ class TestReviewCreate:
             ReviewCreate(business=0, rating=3, comment="A valid length comment")
 
 
-# --------------------------------------------------------------- ReviewUpdate
 class TestReviewUpdate:
     def test_valid_update_parses(self):
         upd = ReviewUpdate(rating=2, comment="Updated, still detailed enough")
@@ -60,7 +52,6 @@ class TestReviewUpdate:
             ReviewUpdate(rating=9, comment="A valid length comment")
 
 
-# -------------------------------------------------------------- FavoriteCreate
 class TestFavoriteCreate:
     def test_valid_favorite(self):
         fav = FavoriteCreate(user_id=3, business_id=7)
@@ -75,14 +66,12 @@ class TestFavoriteCreate:
             FavoriteCreate(**payload)
 
 
-# --------------------------------------------------------------- AuthSyncUser
 class TestAuthSyncUser:
     def test_valid_email_accepted(self):
         u = AuthSyncUser(sub="auth0|abc", email="person@example.com")
         assert u.email == "person@example.com"
 
     def test_missing_email_allowed(self):
-        # email is optional; the sync endpoint derives a placeholder downstream.
         u = AuthSyncUser(sub="auth0|abc")
         assert u.email is None
 
@@ -100,7 +89,6 @@ class TestAuthSyncUser:
             AuthSyncUser(sub="", email="p@e.com")
 
 
-# --------------------------------------------------------------- BusinessQuery
 class TestBusinessQuery:
     def test_all_optional_defaults_to_none(self):
         q = BusinessQuery()
@@ -113,19 +101,18 @@ class TestBusinessQuery:
         assert q.lat == 40.0
 
     @pytest.mark.parametrize("payload", [
-        {"min_rating": 6},     # > 5
-        {"min_rating": -1},    # < 0
-        {"lat": 95},           # > 90
-        {"lat": -95},          # < -90
-        {"lng": 200},          # > 180
-        {"max_distance": -5},  # < 0
+        {"min_rating": 6},
+        {"min_rating": -1},
+        {"lat": 95},
+        {"lat": -95},
+        {"lng": 200},
+        {"max_distance": -5},
     ])
     def test_out_of_range_rejected(self, payload):
         with pytest.raises(ValidationError):
             BusinessQuery(**payload)
 
 
-# ----------------------------------------------------------------- validate()
 class TestValidateWrapper:
     def test_success_returns_instance_and_no_errors(self):
         instance, errors = validate(ReviewCreate, {"business": 1, "rating": 5, "comment": "Solid place to visit"})
@@ -138,11 +125,9 @@ class TestValidateWrapper:
         assert instance is None
         assert isinstance(errors, list)
         assert len(errors) >= 1
-        # Errors are formatted as "field: message".
-        assert all(":" in e for e in errors)
+        assert all(":" in e for e in errors)  # errors are formatted "field: message"
 
     def test_none_data_treated_as_empty(self):
-        # validate(None) -> validates {} -> missing required fields -> errors list.
         instance, errors = validate(ReviewCreate, None)
         assert instance is None
         assert isinstance(errors, list)

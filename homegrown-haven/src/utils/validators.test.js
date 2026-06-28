@@ -1,6 +1,3 @@
-// Unit tests for the shared client-side helpers in validators.js.
-// Pure functions -- no DOM, no rendering, no mocking required.
-
 import { describe, it, expect } from 'vitest';
 import { validateReview, buildQueryString, csvCell, COMMENT_MIN, COMMENT_MAX } from './validators';
 
@@ -36,7 +33,6 @@ describe('validateReview', () => {
   });
 
   it('trims whitespace before measuring length', () => {
-    // 8 real chars padded out -> still too short after trim.
     const errors = validateReview({ rating: 3, comment: '   tooshort   ' });
     expect(errors.comment).toBeDefined();
   });
@@ -44,8 +40,7 @@ describe('validateReview', () => {
 
 describe('buildQueryString', () => {
   it('encodes provided params', () => {
-    const qs = buildQueryString({ q: 'coffee', category: 'Cafe' });
-    expect(qs).toBe('q=coffee&category=Cafe');
+    expect(buildQueryString({ q: 'coffee', category: 'Cafe' })).toBe('q=coffee&category=Cafe');
   });
 
   it('skips null, undefined, and empty-string values', () => {
@@ -54,8 +49,7 @@ describe('buildQueryString', () => {
   });
 
   it('URL-encodes special characters', () => {
-    const qs = buildQueryString({ q: 'tea & crumpets' });
-    expect(qs).toBe('q=tea+%26+crumpets');
+    expect(buildQueryString({ q: 'tea & crumpets' })).toBe('q=tea+%26+crumpets');
   });
 
   it('returns an empty string when nothing is provided', () => {
