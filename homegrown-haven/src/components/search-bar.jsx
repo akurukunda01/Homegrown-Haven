@@ -11,6 +11,7 @@ export default function SearchBar({ searchQuery, setSearchQuery, filters }) {
         <input
           type="text"
           maxLength={SEARCH_MAX}
+          aria-label="Search businesses, categories, or cuisines"
           placeholder="Search businesses, categories, or cuisines..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

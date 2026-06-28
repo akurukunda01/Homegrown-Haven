@@ -742,6 +742,7 @@ export default function Home({ currentUser }) {
           onClick={joinLiveKitRoom}
           disabled={isConnecting}
           aria-label="Talk to AI Assistant"
+          title="Talk to AI Assistant"
           className={`group relative bg-gradient-to-r from-green-600 to-green-700 text-white p-4 rounded-full shadow-2xl hover:shadow-green-500/50 transition-all duration-300 flex items-center gap-3 ${
             isConnecting ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110'
           }`}
@@ -762,6 +763,7 @@ export default function Home({ currentUser }) {
         <button
           onClick={leaveLiveKitRoom}
           aria-label="End AI Assistant call"
+          title="End AI Assistant call"
           className="group relative bg-gradient-to-r from-red-600 to-red-700 text-white p-4 rounded-full shadow-2xl hover:shadow-red-500/50 hover:scale-110 transition-all duration-300 flex items-center gap-3"
         >
           <div className="relative">
@@ -817,6 +819,7 @@ export default function Home({ currentUser }) {
             <button
               onClick={() => { setReportOpen(false); setFilterOpen(!filterOpen); }}
               aria-label="Open filters"
+              title="Open filters"
               className="group relative bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-3 rounded-xl shadow-lg hover:shadow-green-500/50 transition-all duration-300 flex items-center hover:scale-105 "
             >
               <Filter className="w-5 h-5 mx-2 " />
@@ -827,6 +830,7 @@ export default function Home({ currentUser }) {
             <button
               onClick={() => { setFilterOpen(false); setReportOpen(true); }}
               aria-label="Customize and export business report"
+              title="Customize and export business report"
               className="group relative bg-white border-2 border-green-700 text-green-700 px-3 py-3 rounded-xl shadow-lg hover:shadow-green-500/50 transition-all duration-300 flex items-center hover:scale-105"
             >
               <Download className="w-5 h-5 mx-2" />

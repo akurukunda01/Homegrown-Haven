@@ -27,8 +27,17 @@ export default function BusinessCard({ business, onSelect, isFavorited, onToggle
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={`View details for ${business.name}`}
       onClick={() => onSelect(business)}
-      className="group cursor-pointer bg-card border border-border rounded-xl overflow-hidden bg-gray-50 hover:shadow-lg transition-all duration-300 hover:border-primary/50"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect(business)
+        }
+      }}
+      className="group cursor-pointer bg-card border border-border rounded-xl overflow-hidden bg-gray-50 hover:shadow-lg transition-all duration-300 hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-green-700"
     >
       <div className="relative h-48 overflow-hidden bg-muted">
         <img
@@ -51,6 +60,8 @@ export default function BusinessCard({ business, onSelect, isFavorited, onToggle
             e.stopPropagation()
             onToggleFavorite(business.id)
           }}
+          aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+          title={isFavorited ? "Remove from favorites" : "Add to favorites"}
           className="group absolute top-3 right-3 bg-background/90 backdrop-blur rounded-lg hover:bg-primary/20 transition-all  flex items-center hover:scale-150 p-2"
         >
           <Heart className={`w-5 h-5 transition-colors ${isFavorited ? "fill-red-500 text-red-500" : ""}`} />

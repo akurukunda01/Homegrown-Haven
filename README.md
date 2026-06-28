@@ -67,12 +67,15 @@ HomegrownHaven/
 │   ├── validation.py           #   Pydantic request models + auth/ownership helpers
 │   ├── voice_chat.py           #   LiveKit voice agent (Deepgram → Groq → ElevenLabs)
 │   ├── generate_token.py       #   LiveKit access-token helper
-│   └── db.sql                  #   PostgreSQL schema + seed data
+│   ├── db/db.sql               #   PostgreSQL schema + seed data
+│   └── tests/                  #   pytest suite (unit + API integration)
 │
 ├── voice_mcp/                  # ── VOICE TOOLS ── FastMCP server the agent calls (port 8001)
 │   └── main.py                 #   tool definitions (search, navigate, filter, review…)
 │
 ├── program_features/           # ── DOCS ── feature-by-feature write-ups (see above)
+├── TESTING.md                  # test suite: what's covered + how to run
+├── ACCESSIBILITY.md            # accessibility features + known limitations
 ├── .env                        # secrets (LiveKit / API keys) — not committed
 └── README.md                   # you are here
 ```
@@ -106,8 +109,50 @@ write-up for each one:
 | Two-layer input validation | [input-validation.md](./program_features/input-validation.md) |
 | Data storage across all layers | [data-storage.md](./program_features/data-storage.md) |
 | Code style & conventions | [comments-and-conventions.md](./program_features/comments-and-conventions.md) |
+| Testing & verification | [TESTING.md](./TESTING.md) |
+| Accessibility | [ACCESSIBILITY.md](./ACCESSIBILITY.md) |
 
+---
 
+## Quality & Verification
+
+### Testing
+
+The project ships an automated test suite — **76 tests (60 backend, 16 frontend), all
+passing**:
+
+- **Backend (`pytest`)** — pure-logic unit tests (Haversine distance, Pydantic request
+  validation) **plus** Flask API integration tests that hit the real route handlers
+  against a throwaway Postgres database seeded from a self-contained schema (the real
+  `business_directory` data is never touched).
+- **Frontend (`Vitest`)** — unit tests for the shared validation / CSV-formatting helpers.
+
+```bash
+python -m pytest backend/tests -v          # backend (needs local Postgres)
+cd homegrown-haven && npm test             # frontend
+```
+
+Full details, test layout, and example tests are in **[TESTING.md](./TESTING.md)**.
+
+> **Scope note:** the LiveKit voice agent, the MCP tool server, and React component
+> rendering are verified manually rather than unit-tested — they're thin layers over
+> external services. This is called out explicitly in TESTING.md.
+
+### Accessibility
+
+The core flows are keyboard- and screen-reader-friendly: business cards are
+keyboard-operable (Tab + Enter/Space), every form input is associated with its label,
+icon-only buttons have accessible names and hover tooltips, and the interactive star
+rating uses real focusable buttons.
+
+Full feature list and a keyboard verification walkthrough are in
+**[ACCESSIBILITY.md](./ACCESSIBILITY.md)**.
+
+> **Known limitations:** the filter/report slide-over panels are not modal dialogs yet
+> (no focus trapping or Esc-to-close), there is no skip-to-content link, and there are no
+> automated accessibility tests. These are tracked as future work in ACCESSIBILITY.md.
+
+---
 
 ## Setup and Installation
 

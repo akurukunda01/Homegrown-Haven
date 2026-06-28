@@ -206,18 +206,35 @@ export default function BusinessDetail({ business, user, onBack, onAskAI, isFavo
   if (!business) return null;
 
   const StarRating = ({ rating, interactive = false, onChange }) => (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(star => (
-        <Star
-          key={star}
-          className={`w-5 h-5 ${
-            star <= rating
-              ? 'fill-green-700 text-green-700'
-              : 'text-gray-300'
-          } ${interactive ? 'cursor-pointer hover:text-green-700' : ''}`}
-          onClick={() => interactive && onChange(star)}
-        />
-      ))}
+    <div
+      className="flex gap-1"
+      role={interactive ? 'group' : 'img'}
+      aria-label={interactive ? 'Select a rating' : `Rated ${rating} out of 5 stars`}
+    >
+      {[1, 2, 3, 4, 5].map(star => {
+        const icon = (
+          <Star
+            className={`w-5 h-5 ${
+              star <= rating
+                ? 'fill-green-700 text-green-700'
+                : 'text-gray-300'
+            } ${interactive ? 'cursor-pointer hover:text-green-700' : ''}`}
+          />
+        );
+        return interactive ? (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            aria-label={`Rate ${star} ${star === 1 ? 'star' : 'stars'}`}
+            className="focus:outline-none focus:ring-2 focus:ring-green-700 rounded"
+          >
+            {icon}
+          </button>
+        ) : (
+          <span key={star}>{icon}</span>
+        );
+      })}
     </div>
   );
 
@@ -527,7 +544,7 @@ export default function BusinessDetail({ business, user, onBack, onAskAI, isFavo
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-600">Rating</label>
+                    <span className="block text-sm font-medium mb-2 text-gray-600">Rating</span>
                     <StarRating
                       rating={newReview.rating}
                       interactive={true}
@@ -542,8 +559,9 @@ export default function BusinessDetail({ business, user, onBack, onAskAI, isFavo
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-600">Your Review</label>
+                    <label htmlFor="review-comment" className="block text-sm font-medium mb-2 text-gray-600">Your Review</label>
                     <textarea
+                      id="review-comment"
                       value={newReview.comment}
                       onChange={(e) => {
                         setNewReview({ ...newReview, comment: e.target.value })

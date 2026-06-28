@@ -61,6 +61,7 @@ export default function BusinessFilter({ onFilterChange, isOpen, onClose, filter
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Close filters"
+              title="Close filters"
             >
               <X className="w-5 h-5 text-gray-600" />
             </button>
@@ -70,10 +71,11 @@ export default function BusinessFilter({ onFilterChange, isOpen, onClose, filter
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="filter-category" className="block text-sm font-semibold text-gray-700 mb-2">
                 Category
               </label>
               <select
+                id="filter-category"
                 value={filters.category}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
                 className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-green-700 focus:border-transparent bg-white shadow-sm"
@@ -89,10 +91,11 @@ export default function BusinessFilter({ onFilterChange, isOpen, onClose, filter
 
             {/* Rating Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="filter-min-rating" className="block text-sm font-semibold text-gray-700 mb-2">
                 Minimum Rating
               </label>
               <select
+                id="filter-min-rating"
                 value={filters.minRating}
                 onChange={(e) => handleFilterChange('minRating', parseFloat(e.target.value))}
                 className="w-full px-4 text-black py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-700 focus:border-transparent bg-white shadow-sm"
@@ -108,10 +111,11 @@ export default function BusinessFilter({ onFilterChange, isOpen, onClose, filter
 
             {/* Distance Filter */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="filter-max-distance" className="block text-sm font-semibold text-gray-700 mb-2">
                 Maximum Distance
               </label>
               <select
+                id="filter-max-distance"
                 value={filters.maxDistance}
                 onChange={(e) => handleFilterChange('maxDistance', e.target.value)}
                 className="w-full px-4 text-black py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-700 focus:border-transparent bg-white shadow-sm"
@@ -127,9 +131,9 @@ export default function BusinessFilter({ onFilterChange, isOpen, onClose, filter
 
             {/* Favorites Toggle */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <span className="block text-sm font-semibold text-gray-700 mb-2">
                 Favorites
-              </label>
+              </span>
               <button
                 onClick={() => handleFilterChange('favoritesOnly', !filters.favoritesOnly)}
                 className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all shadow-sm ${
@@ -145,9 +149,9 @@ export default function BusinessFilter({ onFilterChange, isOpen, onClose, filter
 
             {/* Has Deals Toggle */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <span className="block text-sm font-semibold text-gray-700 mb-2">
                 Deals & Coupons
-              </label>
+              </span>
               <button
                 onClick={() => handleFilterChange('hasDeals', !filters.hasDeals)}
                 className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all shadow-sm ${
