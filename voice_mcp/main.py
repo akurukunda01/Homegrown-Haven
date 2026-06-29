@@ -10,7 +10,7 @@ import os
 import requests
 from typing import Optional, Literal
 
-# Load local environment (e.g. VOICE_AGENT_AUTH0_ID) so `uv run main.py` works as-is.
+# Load local environment 
 load_dotenv()
 
 # Create an MCP server
