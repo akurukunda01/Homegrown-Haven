@@ -51,7 +51,7 @@ connected_clients = set()
 def websocket(ws):
     """WebSocket endpoint for agent-to-frontend communication"""
     connected_clients.add(ws)
-    print("✅ Frontend connected to WebSocket")
+    print("Frontend connected to WebSocket")
     try:
         while True:
             # Keep connection alive, receive any messages from frontend
@@ -62,7 +62,7 @@ def websocket(ws):
         print(f"WebSocket error: {e}")
     finally:
         connected_clients.remove(ws)
-        print("❌ Frontend disconnected")
+        print("Frontend disconnected")
 
 def send_to_frontend(message):
     """Send navigation commands to all connected frontends"""
